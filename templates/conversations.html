@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversations - AI Agent Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        
+        :root {
+            --primary: #6366F1;
+            --secondary: #8B5CF6;
+            --scientific: #10B981;
+        }
+        
+        body { background: #F9FAFB; }
+        
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            box-shadow: 4px 0 24px rgba(99, 102, 241, 0.12);
+        }
+        
+        .nav-item {
+            transition: all 0.2s ease;
+            border-radius: 12px;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(4px);
+        }
+        
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(99, 102, 241, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .chat-message {
+            max-width: 80%;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background: linear-gradient(135deg, #E5E7EB 0%, #D1D5DB 100%);
+            margin-left: auto;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .bot-message {
+            background: linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%);
+            margin-right: auto;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.12);
+        }
+        
+        .scientific-message {
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+            border-left: 4px solid var(--scientific);
+        }
+        
+        .corrected-message {
+            border-left: 4px solid #10b981;
+            background: linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%);
+        }
+
+        .disliked-message {
+            border-left: 4px solid #ef4444;
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+        }
+        
+        .cached-message {
+            border-left: 4px solid #8B5CF6; /* --secondary purple */
+            background: linear-gradient(135deg, #EDE9FE 0%, #DDD6FE 100%);
+        }
+        
+        .correction-indicator, .dislike-indicator, .cached-indicator {
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        
+        .correction-indicator {
+            background: #10b981;
+            color: white;
+        }
+
+        .dislike-indicator {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .cached-indicator {
+            background: #8B5CF6; /* --secondary purple */
+            color: white;
+        }
+        
+        .conversation-item {
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            border-radius: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .conversation-item:hover {
+            background: #F3F4F6;
+            cursor: pointer;
+            border-left-color: var(--primary);
+            transform: translateX(4px);
+        }
+        
+        .conversation-item.active {
+            background: linear-gradient(90deg, #EFF6FF 0%, #DBEAFE 100%);
+            border-left-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+        }
+
+        .needs-attention {
+            background-color: #FEE2E2;
+            border-left-color: #EF4444;
+        }
+        
+        .needs-attention:hover {
+            background-color: #FECACA;
+        }
+        
+        .search-box {
+            background: white;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 12px 16px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        
+        .search-box:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+        
+        .conversation-sidebar, .chat-container {
+            overflow-y: auto;
+        }
+        
+        .part-button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #E5E7EB;
+            border-radius: 16px;
+        }
+        
+        .part-button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+        }
+        
+        .modal-overlay {
+            backdrop-filter: blur(8px);
+        }
+        
+        .btn-action {
+            transition: all 0.2s;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .chat-type-tab {
+            padding: 12px 24px;
+            border-radius: 12px;
+            transition: all 0.3s;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .chat-type-tab.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+        
+        .chat-type-tab:not(.active) {
+            background: #E5E7EB;
+            color: #6B7280;
+        }
+        
+        .chat-type-tab:not(.active):hover {
+            background: #D1D5DB;
+        }
+        
+        .scientific-tab.active {
+            background: linear-gradient(135deg, var(--scientific) 0%, #059669 100%);
+        }
+
+        .chat-message p:not(.text-xs) {
+            text-align: right;
+            direction: rtl;
+        }
+        
+        .image-preview {
+            max-width: 500px;
+            max-height: 500px;
+            border-radius: 8px;
+            margin-top: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .image-preview:hover {
+            transform: scale(1.05);
+        }
+        
+        #modal-question-text, #modal-corrected-text {
+            text-align: right;
+            direction: rtl;
+        }
+        
+        #modal-question-image {
+            max-height: 400px;
+            max-width: 100%;
+            object-fit: contain;
+        }
+        
+        #correction-modal .p-6[style*="overflow-y"] {
+            scrollbar-width: thin;
+            scrollbar-color: #6366F1 #E5E7EB;
+        }
+        
+        #correction-modal .p-6[style*="overflow-y"]::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        #correction-modal .p-6[style*="overflow-y"]::-webkit-scrollbar-track {
+            background: #E5E7EB;
+            border-radius: 10px;
+            margin: 8px 0;
+        }
+        
+        #correction-modal .p-6[style*="overflow-y"]::-webkit-scrollbar-thumb {
+            background: #6366F1;
+            border-radius: 10px;
+        }
+        
+        #correction-modal .p-6[style*="overflow-y"]::-webkit-scrollbar-thumb:hover {
+            background: #4F46E5;
+        }
+    </style>
+</head>
+<body>
+    <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50" style="backdrop-filter: blur(4px);">
+        <div class="relative max-w-4xl max-h-screen p-4">
+            <button onclick="closeImageModal()" class="absolute top-2 right-2 text-white text-3xl hover:text-gray-300">&times;</button>
+            <img id="modal-image" src="" alt="Full size image" class="max-w-full max-h-screen rounded-lg">
+        </div>
+    </div>
+
+    <div class="flex h-screen">
+        <div class="sidebar w-64 text-white p-6 flex flex-col">
+            <div>
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold tracking-tight">AI Agent Dashboard</h1>
+                    <p class="text-sm opacity-80 mt-1">Dr. Nasser Chemistry Bot</p>
+                </div>
+                
+                <nav class="space-y-1">
+                    <a href="/" class="nav-item flex items-center p-3">
+                        <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                    </a>
+                    <a href="/conversations" class="nav-item active flex items-center p-3">
+                        <i class="fas fa-comments mr-3"></i>Conversations
+                    </a>
+                    <a href="/broadcast" class="nav-item flex items-center p-3">
+                        <i class="fas fa-bullhorn mr-3"></i>Broadcast
+                    </a>
+                    <a href="/content-management" class="nav-item flex items-center p-3">
+                        <i class="fas fa-folder mr-3"></i>Content Management
+                    </a>
+                    <a href="/feedback" class="nav-item flex items-center p-3">
+                        <i class="fas fa-thumbs-down mr-3"></i>Feedback Queue
+                    </a>
+                    <a href="/corrections-hub" class="nav-item flex items-center p-3">
+                        <i class="fas fa-check-double mr-3"></i>Corrections Hub
+                    </a>
+                    <a href="/analytics" class="nav-item flex items-center p-3">
+                        <i class="fas fa-chart-bar mr-3"></i>Analytics
+                    </a>
+                    <a href="/site-issues" class="nav-item flex items-center p-3">
+                        <i class="fas fa-cogs mr-3"></i>Site Issues
+                    </a>
+                    <a href="/admin-management" class="nav-item flex items-center p-3">
+                        <i class="fas fa-user-shield mr-3"></i>Admin Management
+                    </a>
+                </nav>
+            </div>
+            <div class="mt-auto">
+                 <a href="/logout" class="nav-item flex items-center p-3">
+                    <i class="fas fa-sign-out-alt mr-3"></i>Logout
+                </a>
+            </div>
+        </div>
+        
+        {% if selected_part %}
+        <div class="flex-1 flex flex-col min-w-0">
+            <div class="bg-white border-b p-4">
+                <div class="flex space-x-4 justify-center">
+                    <a href="{{ url_for('conversations', chat_type='administrative', part=selected_part) }}" 
+                       class="chat-type-tab {% if chat_type == 'administrative' %}active{% endif %}">
+                        <i class="fas fa-user-tie mr-2"></i>Administrative
+                    </a>
+                    <a href="{{ url_for('conversations', chat_type='scientific', part=selected_part) }}" 
+                       class="chat-type-tab scientific-tab {% if chat_type == 'scientific' %}active{% endif %}">
+                        <i class="fas fa-flask mr-2"></i>Scientific
+                    </a>
+                </div>
+            </div>
+            
+            <div class="flex flex-1 overflow-hidden">
+                <div class="w-1/3 bg-white border-r p-6 flex flex-col">
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-2xl font-bold text-gray-900">
+                                Part {{ selected_part }} 
+                                {% if chat_type == 'scientific' %}
+                                <span class="text-green-600">(Scientific)</span>
+                                {% else %}
+                                <span class="text-blue-600">(Administrative)</span>
+                                {% endif %}
+                            </h2>
+                            <a href="{{ url_for('conversations') }}" class="text-sm text-indigo-600 hover:text-indigo-700 font-semibold">
+                                <i class="fas fa-arrow-left mr-1"></i>Back to Parts
+                            </a>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <input type="text" id="search-input" placeholder="Search by Student ID..." class="search-box">
+                        </div>
+                    </div>
+                    
+                    <div class="conversation-sidebar flex-1">
+                        {% for user in users %}
+                        <div class="conversation-item p-4 {% if user.negative_feedback_count > 0 %}needs-attention{% endif %}" 
+                             data-user-id="{{ user.user_id }}" data-chat-type="{{ chat_type }}">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 {% if chat_type == 'scientific' %}bg-gradient-to-r from-green-500 to-green-800{% else %}bg-gradient-to-r from-blue-500 to-purple-600{% endif %} rounded-full flex items-center justify-center text-white font-semibold">
+                                        {{ user.user_id[-2:] }}
+                                    </div>
+                                    <div class="ml-3">
+                                        <p class="font-semibold text-gray-800">Student {{ user.user_id }}</p>
+                                        <p class="text-sm text-gray-500">{{ user.message_count }} messages</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xs text-gray-400">{{ user.last_message_ts.strftime('%Y-%m-%d') }}</p>
+                                    
+                                    {% if user.negative_feedback_count > 0 %}
+                                        <i class="fas fa-exclamation-circle text-red-500 mt-1" title="Contains negative feedback"></i>
+                                    {% endif %}
+                                    
+                                    {% if user.new_message_count > 0 %}
+                                        <span class="new-message-badge inline-block bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-1">
+                                            {{ user.new_message_count }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="flex-1 flex flex-col">
+                    <div class="bg-white border-b p-6">
+                        <div id="chat-header" class="hidden">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center">
+                                    <div id="current-user-avatar" class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                                    </div>
+                                    <div class="ml-4">
+                                        <h3 id="current-user-name" class="text-xl font-semibold text-gray-800"></h3>
+                                        <p id="current-user-info" class="text-sm text-gray-500"></p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="export-chat" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold">
+                                        <i class="fas fa-download mr-2"></i>Export Chat
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="no-chat-selected" class="text-center text-gray-500 py-8">
+                            <i class="fas fa-comments text-4xl mb-4"></i>
+                            <p class="text-lg">Select a conversation to view messages</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex-1 bg-gray-50 p-6 overflow-y-auto">
+                        <div id="chat-messages" class="chat-container space-y-4">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="flex-1 flex flex-col min-w-0">
+            <div class="bg-white border-b p-4">
+                <div class="flex space-x-4 justify-center">
+                    <a href="{{ url_for('conversations', chat_type='administrative') }}" 
+                       class="chat-type-tab {% if chat_type == 'administrative' or not chat_type %}active{% endif %}">
+                        <i class="fas fa-user-tie mr-2"></i>Administrative
+                    </a>
+                    <a href="{{ url_for('conversations', chat_type='scientific') }}" 
+                       class="chat-type-tab scientific-tab {% if chat_type == 'scientific' %}active{% endif %}">
+                        <i class="fas fa-flask mr-2"></i>Scientific
+                    </a>
+                </div>
+            </div>
+            
+            <div class="p-8 overflow-y-auto">
+                <div class="mb-8">
+                    <h2 class="text-4xl font-bold text-gray-900 mb-2">
+                        {% if chat_type == 'scientific' %}
+                        Scientific Conversation Parts
+                        {% else %}
+                        Administrative Conversation Parts
+                        {% endif %}
+                    </h2>
+                    <p class="text-gray-600 text-lg">Please select a part to view the assigned conversations.</p>
+                </div>
+                
+                <div class="card p-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-2xl font-bold text-gray-900">
+                            <i class="fas fa-tasks mr-2"></i> Select a Conversation Part
+                        </h3>
+                        <span class="text-lg font-bold text-gray-600">Total: {{ total_count }} conversations</span>
+                    </div>
+
+                    {% if total_count > 0 %}
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
+                        {% for i in range(1, 11) %}
+                        <a href="{{ url_for('conversations', chat_type=chat_type or 'administrative', part=i) }}" 
+                           class="part-button p-6 text-center bg-white hover:bg-blue-50">
+                            <h4 class="text-xl font-bold text-gray-800 mb-2">Admin {{ i }}</h4>
+                            <p class="text-3xl font-bold {% if chat_type == 'scientific' %}text-green-600{% else %}text-indigo-600{% endif %}">
+                                {{ part_counts[i-1] }}
+                            </p>
+                            <p class="text-sm text-gray-500 mt-1">conversations</p>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-gray-500 py-12">
+                        <i class="fas fa-comment-slash text-6xl mb-4 text-gray-300"></i>
+                        <p class="text-xl mb-2">No conversations found!</p>
+                        <p class="text-gray-500">Wait for students to interact with the bot.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div id="correction-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl flex flex-col" style="max-height: 90vh;">
+            <div class="p-6 border-b flex-shrink-0">
+                <h3 class="text-xl font-bold text-gray-900">Correct Response</h3>
+                <p class="text-sm text-gray-500 mt-1">Choose how to apply this correction.</p>
+            </div>
+            
+            <div class="p-6 flex-1" style="overflow-y: auto; max-height: calc(90vh - 200px);">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Student's Question:</label>
+                    <div id="modal-question-container" class="w-full p-4 border-2 border-gray-200 rounded-xl bg-gray-50">
+                        <img id="modal-question-image" class="hidden max-w-full rounded-lg" alt="Student's question image" />
+                        <p id="modal-question-text" class="hidden"></p>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="modal-corrected-text" class="block text-sm font-semibold text-gray-700 mb-2">Corrected Answer:</label>
+                    <textarea id="modal-corrected-text" rows="6" class="w-full p-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+                </div>
+                
+                <div id="faq-options" class="hidden mt-4 p-4 border-2 bg-blue-50 rounded-xl border-blue-200">
+                    <label for="faq-file" class="block text-sm font-semibold text-gray-700 mb-2">Target FAQ File:</label>
+                    <select id="faq-file" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 p-6 border-t bg-gray-50 rounded-b-2xl flex-shrink-0">
+                <button id="cancel-correction" class="px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors font-semibold">
+                    Cancel
+                </button>
+                <button id="save-direct-correction" class="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-semibold">
+                    <i class="fas fa-save mr-2"></i>Save Direct Correction
+                </button>
+                <button id="save-both-correction" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold">
+                    <i class="fas fa-layer-group mr-2"></i>Save to Both
+                </button>
+                <button id="save-faq-correction" class="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold">
+                    <i class="fas fa-book mr-2"></i>Save to FAQ
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+    
+    <script>
+        let currentUserId = null;
+        let currentConversation = null;
+        let currentCorrectionData = null;
+        let currentChatType = '{{ chat_type or "administrative" }}';
+        
+        function openImageModal(imagePath) {
+            document.getElementById('modal-image').src = imagePath;
+            document.getElementById('image-modal').classList.remove('hidden');
+            document.getElementById('image-modal').classList.add('flex');
+        }
+        
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
+            document.getElementById('image-modal').classList.remove('flex');
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            if (document.querySelector('.conversation-item')) {
+                initializeEventListeners();
+            }
+        });
+        
+        function initializeEventListeners() {
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const userId = this.dataset.userId;
+                    const chatType = this.dataset.chatType || currentChatType;
+                    loadConversation(userId, chatType);
+                });
+            });
+            
+            document.getElementById('search-input').addEventListener('input', function() {
+                filterConversations(this.value);
+            });
+            
+            document.getElementById('cancel-correction').addEventListener('click', closeModal);
+            document.getElementById('save-direct-correction').addEventListener('click', saveDirectCorrection);
+            document.getElementById('save-both-correction').addEventListener('click', saveToBoth);
+            document.getElementById('save-faq-correction').addEventListener('click', saveFaqCorrection);
+        }
+        
+        async function loadConversation(userId, chatType) {
+            currentUserId = userId;
+            currentChatType = chatType;
+            
+            document.querySelectorAll('.conversation-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const clickedItem = document.querySelector(`[data-user-id="${userId}"]`); // <-- Get the item
+            clickedItem.classList.add('active');            
+            
+            const badge = clickedItem.querySelector('.new-message-badge');
+            if (badge) { badge.remove(); }
+            
+            try {
+                const response = await fetch(`/api/conversation/${userId}?chat_type=${chatType}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentConversation = result.conversation;
+                    displayConversation(userId, result.conversation, result.chat_type);
+                } else {
+                    showToast('Error loading conversation: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error loading conversation: ' + error.message, 'error');
+            }
+        }
+        
+        <!-- START: Updated displayConversation function -->
+        function displayConversation(userId, conversation, chatType) {
+            document.getElementById('no-chat-selected').classList.add('hidden');
+            document.getElementById('chat-header').classList.remove('hidden');
+            
+            const avatarElement = document.getElementById('current-user-avatar');
+            if (chatType === 'scientific') {
+                avatarElement.className = 'w-12 h-12 bg-gradient-to-r from-green-500 to-green-800 rounded-full flex items-center justify-center text-white font-semibold';
+            } else {
+                avatarElement.className = 'w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold';
+            }
+            avatarElement.textContent = userId.slice(-2);
+            
+            document.getElementById('current-user-name').textContent = `Student ${userId}`;
+            document.getElementById('current-user-info').textContent = `${conversation.length} messages (${chatType})`;
+            
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.innerHTML = '';
+            
+            conversation.forEach((message, index) => {
+                const userDiv = document.createElement('div');
+                userDiv.className = 'flex justify-end mb-2';
+                
+                // --- START: MODIFIED SECTION (Handles image + text) ---
+                
+                let userContent = '';
+
+                if (message.image_path) {
+                    // If an image exists, show the image.
+                    const imageUrl = `/assets/${message.image_path.replace(/\\/g, '/')}`;
+                    userContent += `<div class="mb-2"><img src="${imageUrl}" class="image-preview" onclick="openImageModal('${imageUrl}')" /></div>`;
+                }
+
+                // Check for user_input (caption)
+                const hasTextInput = message.user_input && 
+                                     message.user_input.trim() && 
+                                     message.user_input !== "[Image Question]" &&
+                                     !message.user_input.startsWith("[Site Issue Image:"); // Filter old bad data
+
+                if (hasTextInput) {
+                    // If text exists, show it.
+                    userContent += `<p>${escapeHtml(message.user_input)}</p>`;
+                }
+                
+                // Fallback if there is NO image and NO text
+                if (!message.image_path && !hasTextInput) {
+                    // Use the original placeholder if it's all we have
+                    if (message.user_input === "[Image Question]") {
+                        userContent = `<p class="italic text-gray-500">[Image Question]</p>`;
+                    } else {
+                        // This will catch any remaining old "[Site Issue Image: ...]" text
+                         userContent = `<p>${escapeHtml(message.user_input)}</p>`;
+                    }
+                }
+                
+                // Handle cases where there's no image and no text at all
+                if (userContent.trim() === '') {
+                     userContent = `<p class="italic text-gray-500">[Empty Message]</p>`;
+                }
+
+                // --- END: MODIFIED SECTION ---
+                
+                userDiv.innerHTML = `
+                    <div class="chat-message user-message p-3 rounded-lg">
+                        ${userContent}
+                        <p class="text-xs text-gray-500 mt-1">${formatTimestamp(message.timestamp)}</p>
+                    </div>
+                `;
+                messagesContainer.appendChild(userDiv);
+                
+                const botDiv = document.createElement('div');
+                botDiv.className = 'flex justify-start mb-4';
+
+                let responseText = message.bot_response;
+                let conditionalClass = chatType === 'scientific' ? 'scientific-message' : '';
+                let indicator = '';
+                let actionButtons = '';
+                
+                const imageUrl = message.image_path ? `/assets/${message.image_path.replace(/\\/g, '/')}` : '';
+                
+                // ⭐ NEW: Check if this is a cached answer
+                const isCachedAnswer = message.cached_question_id !== null && message.cached_question_id !== undefined;
+                
+                if (message.is_corrected) {
+                    responseText = message.corrected_text;
+                    conditionalClass = 'corrected-message';
+                    indicator = '<span class="correction-indicator">CORRECTED</span>';
+                    actionButtons = `<button class="correct-btn ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600" 
+                        data-interaction-id="${message.id}" 
+                        data-original-question="${escapeHtml(message.user_input)}" 
+                        data-current-text="${escapeHtml(responseText)}" 
+                        data-image-url="${imageUrl}">
+                        <i class="fas fa-edit"></i> Edit</button>`;
+                } else if (isCachedAnswer) {
+                    // ⭐ NEW: Cached answer styling
+                    conditionalClass = 'cached-message';
+                    indicator = '<span class="cached-indicator">✓ CACHED</span>';
+                    actionButtons = `
+                        <button class="correct-btn px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600" 
+                            data-interaction-id="${message.id}" 
+                            data-original-question="${escapeHtml(message.user_input)}" 
+                            data-current-text="${escapeHtml(responseText)}" 
+                            data-image-url="${imageUrl}">
+                            <i class="fas fa-edit"></i> Edit</button>
+                    `;
+                } else if (message.user_feedback === -1) {
+                    conditionalClass += ' disliked-message';
+                    indicator = '<span class="dislike-indicator">DISLIKED</span>';
+                    actionButtons = `
+                        <button class="approve-btn px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600" data-interaction-id="${message.id}"><i class="fas fa-check"></i> Approve</button>
+                        <button class="correct-btn px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600" 
+                            data-interaction-id="${message.id}" 
+                            data-original-question="${escapeHtml(message.user_input)}" 
+                            data-current-text="${escapeHtml(responseText)}" 
+                            data-image-url="${imageUrl}">
+                            <i class="fas fa-edit"></i> Correct</button>
+                        <button class="dismiss-btn px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600" data-interaction-id="${message.id}"><i class="fas fa-times"></i> Dismiss</button>
+                    `;
+                } else {
+                     actionButtons = `
+                        <button class="approve-btn ml-2 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600" data-interaction-id="${message.id}"><i class="fas fa-check"></i> Approve</button>
+                        <button class="correct-btn ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600" 
+                            data-interaction-id="${message.id}" 
+                            data-original-question="${escapeHtml(message.user_input)}" 
+                            data-current-text="${escapeHtml(responseText)}" 
+                            data-image-url="${imageUrl}">
+                            <i class="fas fa-edit"></i> Correct</button>
+                    `;
+                }
+
+                botDiv.innerHTML = `
+                    <div class="chat-message bot-message ${conditionalClass} p-3 rounded-lg relative">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <p class="text-gray-800 whitespace-pre-wrap">${escapeHtml(responseText)}</p>
+                                <p class="text-xs text-gray-500 mt-1">${formatTimestamp(message.timestamp)}</p>
+                            </div>
+                            <div class="ml-3 flex items-center space-x-1" data-interaction-id="${message.id}">
+                                ${indicator}
+                                ${actionButtons}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                messagesContainer.appendChild(botDiv);
+            });
+            
+            document.querySelectorAll('.correct-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    openCorrectionModal(this.dataset, this);
+                });
+            });
+            
+            document.querySelectorAll('.approve-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    approveResponse(this.dataset.interactionId, this);
+                });
+            });
+            
+            document.querySelectorAll('.dismiss-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    dismissFeedbackInConversation(this.dataset.interactionId, true, this);
+                });
+            });
+            
+            messagesContainer.parentElement.scrollTop = messagesContainer.parentElement.scrollHeight;
+        }
+        
+        async function openCorrectionModal(data, buttonElement) {
+            currentCorrectionData = {
+                interactionId: data.interactionId,
+                originalQuestion: data.originalQuestion,
+                currentText: data.currentText,
+                imageUrl: data.imageUrl || '',
+                buttonElement: buttonElement
+            };
+
+            const questionImageEl = document.getElementById('modal-question-image');
+            const questionTextEl = document.getElementById('modal-question-text');
+            
+            if (data.imageUrl && data.imageUrl.trim()) {
+                questionImageEl.src = data.imageUrl;
+                questionImageEl.classList.remove('hidden');
+                questionTextEl.classList.add('hidden');
+            } else {
+                questionTextEl.textContent = data.originalQuestion;
+                questionTextEl.classList.remove('hidden');
+                questionImageEl.classList.add('hidden');
+            }
+            
+            document.getElementById('modal-corrected-text').value = data.currentText;
+            await populateFaqFiles();
+            document.getElementById('faq-options').classList.add('hidden');
+            document.getElementById('correction-modal').classList.remove('hidden');
+            document.getElementById('correction-modal').classList.add('flex');
+        }
+
+        async function approveResponse(interactionId, buttonElement) {
+            if (!interactionId) return;
+            
+            const messageBubble = buttonElement.closest('.chat-message');
+            const actionContainer = buttonElement.closest('.ml-3.flex.items-center.space-x-1');
+            const correctButton = messageBubble.querySelector('.correct-btn');
+            
+            let originalQuestion = correctButton ? correctButton.dataset.originalQuestion : '';
+            let originalText = correctButton ? correctButton.dataset.currentText : messageBubble.querySelector('.whitespace-pre-wrap').textContent;
+            let imageUrl = correctButton ? correctButton.dataset.imageUrl : '';
+
+            try {
+                const response = await fetch('/api/conversation/approve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        interaction_id: parseInt(interactionId)
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Response approved and cached successfully', 'success');
+                    
+                    messageBubble.classList.add('corrected-message');
+                    messageBubble.classList.remove('disliked-message', 'scientific-message', 'cached-message');
+                    
+                    const newButtons = `
+                        <span class="correction-indicator">CORRECTED</span>
+                        <button class="correct-btn ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600" 
+                                data-interaction-id="${interactionId}" 
+                                data-original-question="${escapeHtml(originalQuestion)}" 
+                                data-current-text="${escapeHtml(originalText)}"
+                                data-image-url="${imageUrl}">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    `;
+                    actionContainer.innerHTML = newButtons;
+                    
+                    actionContainer.querySelector('.correct-btn').addEventListener('click', function() {
+                        openCorrectionModal(this.dataset, this);
+                    });
+                    
+                } else {
+                    showToast('Error approving response: ' + (result.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showToast('Error approving response: ' + error.message, 'error');
+            }
+        }
+        
+        function closeModal() {
+            document.getElementById('correction-modal').classList.add('hidden');
+            document.getElementById('correction-modal').classList.remove('flex');
+            currentCorrectionData = null;
+        }
+        
+        async function saveDirectCorrection() {
+            if (!currentCorrectionData) return;
+            
+            const correctedText = document.getElementById('modal-corrected-text').value.trim();
+            if (!correctedText) {
+                showToast('Please enter a corrected response', 'error');
+                return;
+            }
+            
+            const interactionId = currentCorrectionData.interactionId;
+            const originalQuestion = currentCorrectionData.originalQuestion;
+            const imageUrl = currentCorrectionData.imageUrl;
+            const buttonElement = currentCorrectionData.buttonElement; 
+            
+            if (!buttonElement) {
+                 showToast('Error: Could not find message to update.', 'error');
+                 closeModal();
+                 return;
+            }
+            
+            const messageBubble = buttonElement.closest('.chat-message');
+            const actionContainer = buttonElement.closest('.ml-3.flex.items-center.space-x-1');
+
+            if (!messageBubble || !actionContainer) {
+                 showToast('Error: UI elements not found.', 'error');
+                 closeModal();
+                 return;
+            }
+            
+            try {
+                const response = await fetch('/api/conversation/correct', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        interaction_id: parseInt(interactionId),
+                        corrected_text: correctedText
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Response corrected successfully', 'success');
+                    
+                    messageBubble.querySelector('.whitespace-pre-wrap').textContent = correctedText;
+                    messageBubble.classList.add('corrected-message');
+                    messageBubble.classList.remove('disliked-message', 'scientific-message', 'cached-message');
+                    
+                    const newButtons = `
+                        <span class="correction-indicator">CORRECTED</span>
+                        <button class="correct-btn ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600" 
+                                data-interaction-id="${interactionId}" 
+                                data-original-question="${escapeHtml(originalQuestion)}" 
+                                data-current-text="${escapeHtml(correctedText)}"
+                                data-image-url="${imageUrl}">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    `;
+                    actionContainer.innerHTML = newButtons;
+                    
+                    actionContainer.querySelector('.correct-btn').addEventListener('click', function() {
+                        openCorrectionModal(this.dataset, this);
+                    });
+                    
+                    closeModal();
+                    
+                } else {
+                    showToast('Error saving correction: ' + (result.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showToast('Error saving correction: ' + error.message, 'error');
+            }
+        }
+        
+        async function saveToBoth() {
+            if (!currentCorrectionData) return;
+
+            const correctedText = document.getElementById('modal-corrected-text').value.trim();
+            let faqFile = document.getElementById('faq-file').value;
+            
+            if (!correctedText) {
+                showToast('Corrected answer cannot be empty.', 'error'); return;
+            }
+
+            const faqOptionsDiv = document.getElementById('faq-options');
+            if (faqOptionsDiv.classList.contains('hidden')) {
+                faqOptionsDiv.classList.remove('hidden');
+                showToast('Please select an FAQ file and click again to save.', 'info');
+                return;
+            }
+            
+            if (faqFile === 'new') {
+                const newFilename = prompt("Enter a name for the new FAQ file:", "new_faqs.json");
+                if (newFilename) {
+                    faqFile = newFilename.endsWith('.json') ? newFilename : newFilename + '.json';
+                } else {
+                    return;
+                }
+            }
+
+            const interactionId = currentCorrectionData.interactionId;
+            const originalQuestion = currentCorrectionData.originalQuestion;
+            const imageUrl = currentCorrectionData.imageUrl;
+            const buttonElement = currentCorrectionData.buttonElement; 
+
+            if (!buttonElement) {
+                 showToast('Error: Could not find message to update.', 'error');
+                 closeModal();
+                 return;
+            }
+
+            const messageBubble = buttonElement.closest('.chat-message');
+            const actionContainer = buttonElement.closest('.ml-3.flex.items-center.space-x-1');
+            
+            if (!messageBubble || !actionContainer) {
+                 showToast('Error: UI elements not found.', 'error');
+                 closeModal();
+                 return;
+            }
+            
+            try {
+                const response = await fetch('/api/conversation/correct_both', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        interaction_id: parseInt(interactionId),
+                        corrected_text: correctedText,
+                        original_question: originalQuestion,
+                        faq_filename: faqFile,
+                        chat_type: currentChatType
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+
+                    messageBubble.querySelector('.whitespace-pre-wrap').textContent = correctedText;
+                    messageBubble.classList.add('corrected-message');
+                    messageBubble.classList.remove('disliked-message', 'scientific-message', 'cached-message');
+                    
+                    const newButtons = `
+                        <span class="correction-indicator">CORRECTED</span>
+                        <button class="correct-btn ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600" 
+                                data-interaction-id="${interactionId}" 
+                                data-original-question="${escapeHtml(originalQuestion)}" 
+                                data-current-text="${escapeHtml(correctedText)}"
+                                data-image-url="${imageUrl}">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    `;
+                    actionContainer.innerHTML = newButtons;
+                    
+                    actionContainer.querySelector('.correct-btn').addEventListener('click', function() {
+                        openCorrectionModal(this.dataset, this);
+                    });
+
+                    closeModal();
+
+                } else {
+                    showToast('Error saving correction: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error saving to both: ' + error.message, 'error');
+            }
+        }
+
+        async function saveFaqCorrection() {
+            if (!currentCorrectionData) return;
+
+            const questionImageEl = document.getElementById('modal-question-image');
+            const questionTextEl = document.getElementById('modal-question-text');
+            
+            let question = '';
+            if (!questionImageEl.classList.contains('hidden')) {
+                question = '[Image Question]';
+            } else {
+                question = questionTextEl.textContent;
+            }
+            
+            const answer = document.getElementById('modal-corrected-text').value.trim();
+            let faqFile = document.getElementById('faq-file').value;
+            
+            if (!answer) {
+                showToast('Corrected answer cannot be empty.', 'error'); return;
+            }
+            
+            const faqOptionsDiv = document.getElementById('faq-options');
+            if (faqOptionsDiv.classList.contains('hidden')) {
+                faqOptionsDiv.classList.remove('hidden');
+                showToast('Please select an FAQ file and click again to save.', 'info');
+                return;
+            }
+            
+            if (faqFile === 'new') {
+                const newFilename = prompt("Enter a name for the new FAQ file:", "new_faqs.json");
+                if (newFilename) {
+                    faqFile = newFilename.endsWith('.json') ? newFilename : newFilename + '.json';
+                } else {
+                    return; 
+                }
+            }
+            
+            try {
+                const response = await fetch('/api/faq/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        filename: faqFile, 
+                        question: question, 
+                        answer: answer,
+                        chat_type: currentChatType
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    
+                    if (currentCorrectionData.buttonElement) {
+                        await dismissFeedbackInConversation(currentCorrectionData.interactionId, false, currentCorrectionData.buttonElement);
+                    }
+                    
+                    closeModal();
+                } else {
+                    showToast('Error adding FAQ: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error adding FAQ: ' + error.message, 'error');
+            }
+        }
+
+        async function dismissFeedbackInConversation(interactionId, showMsg=true, buttonElement=null) {
+            if (!buttonElement) {
+                const actionContainer = document.querySelector(`.ml-3.flex.items-center.space-x-1[data-interaction-id="${interactionId}"]`);
+                if (actionContainer) {
+                    buttonElement = actionContainer.querySelector('.dismiss-btn') || actionContainer.querySelector('.correct-btn');
+                }
+            }
+            
+            if (!buttonElement) {
+                console.error("Could not find button element for interaction " + interactionId);
+                if(showMsg) showToast('Error: Could not update UI.', 'error');
+                return;
+            }
+
+            const messageBubble = buttonElement.closest('.chat-message');
+            const actionContainer = buttonElement.closest('.ml-3.flex.items-center.space-x-1');
+            const correctButton = messageBubble.querySelector('.correct-btn');
+
+            let originalQuestion = correctButton ? correctButton.dataset.originalQuestion : '';
+            let originalText = correctButton ? correctButton.dataset.currentText : messageBubble.querySelector('.whitespace-pre-wrap').textContent;
+            let imageUrl = correctButton ? correctButton.dataset.imageUrl : '';
+
+            try {
+                const response = await fetch('/api/feedback/dismiss', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ interaction_id: parseInt(interactionId) })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    if(showMsg) showToast('Feedback dismissed.', 'success');
+                    
+                    messageBubble.classList.remove('disliked-message');
+                    
+                    const newButtons = `
+                        <button class="approve-btn ml-2 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600" 
+                                data-interaction-id="${interactionId}">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button class="correct-btn ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600" 
+                                data-interaction-id="${interactionId}" 
+                                data-original-question="${escapeHtml(originalQuestion)}" 
+                                data-current-text="${escapeHtml(originalText)}"
+                                data-image-url="${imageUrl}">
+                            <i class="fas fa-edit"></i> Correct
+                        </button>
+                    `;
+                    actionContainer.innerHTML = newButtons;
+                    
+                    actionContainer.querySelector('.approve-btn').addEventListener('click', function() {
+                        approveResponse(this.dataset.interactionId, this);
+                    });
+                    actionContainer.querySelector('.correct-btn').addEventListener('click', function() {
+                        openCorrectionModal(this.dataset, this);
+                    });
+
+                } else {
+                    if(showMsg) showToast('Error: ' + (result.error || 'Could not dismiss feedback.'), 'error');
+                }
+            } catch (error) {
+                if(showMsg) showToast('Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function populateFaqFiles() {
+            const selectElement = document.getElementById('faq-file');
+            selectElement.innerHTML = '';
+            
+            try {
+                const response = await fetch(`/api/faqs/list?chat_type=${currentChatType}`);
+                const result = await response.json();
+                
+                if (result.success && result.files.length > 0) {
+                    result.files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file;
+                        selectElement.appendChild(option);
+                    });
+                } else {
+                    const defaultFilename = currentChatType === 'scientific' ? 'chapter_1/lesson_1.json' : 'general_faqs.json';
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = defaultFilename;
+                    defaultOption.textContent = `${defaultFilename} (Will be created)`;
+                    selectElement.appendChild(defaultOption);
+                }
+    
+                const newOption = document.createElement('option');
+                newOption.value = 'new';
+                newOption.textContent = 'Create New FAQ File...';
+                selectElement.appendChild(newOption);
+                
+            } catch (error) {
+                showToast('Could not load FAQ files.', 'error');
+            }
+        }
+        
+        function filterConversations(searchTerm) {
+            const items = document.querySelectorAll('.conversation-item');
+            items.forEach(item => {
+                const userId = item.dataset.userId;
+                const visible = userId.toLowerCase().includes(searchTerm.toLowerCase());
+                item.style.display = visible ? 'block' : 'none';
+            });
+        }
+        
+        function formatTimestamp(timestamp) {
+            return new Date(timestamp).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-xl shadow-lg text-white transform translate-x-full transition-transform duration-300 mb-2 ${
+                type === 'success' ? 'bg-gradient-to-r from-green-500 to-green-800' : 
+                type === 'error' ? 'bg-gradient-to-r from-red-500 to-pink-600' : 
+                'bg-gradient-to-r from-blue-500 to-indigo-600'
+            }`;
+            toast.textContent = message;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 3000);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

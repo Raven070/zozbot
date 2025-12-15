@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback Queue - AI Agent Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        
+        :root {
+            --primary: #6366F1;
+            --secondary: #8B5CF6;
+        }
+        
+        body { background: #F9FAFB; }
+        
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            box-shadow: 4px 0 24px rgba(99, 102, 241, 0.12);
+        }
+        
+        .nav-item {
+            transition: all 0.2s ease;
+            border-radius: 12px;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(4px);
+        }
+        
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(99, 102, 241, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .feedback-item {
+            border: 2px solid #FEE2E2;
+            border-left-width: 4px;
+            border-left-color: #EF4444;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #FFFFFF 0%, #FEF2F2 100%);
+        }
+        
+        .feedback-item:hover {
+            border-color: #EF4444;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .user-query {
+            background: linear-gradient(135deg, #F3F4F6 0%, #E5E7EB 100%);
+            padding: 12px 16px;
+            border-radius: 10px;
+            border-left: 3px solid var(--primary);
+        }
+
+        .bot-response {
+            background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%);
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: #991B1B;
+            border-left: 3px solid #EF4444;
+        }
+        
+        .part-button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #E5E7EB;
+            border-radius: 16px;
+        }
+        
+        .part-button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+        }
+        
+        .btn-action {
+            transition: all 0.2s ease;
+            font-weight: 600;
+            border-radius: 10px;
+        }
+        
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .modal-overlay {
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen">
+        <div class="sidebar w-64 text-white p-6 flex flex-col">
+            <div>
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold tracking-tight">AI Agent Dashboard</h1>
+                    <p class="text-sm opacity-80 mt-1">Dr. Nasser Chemistry Bot</p>
+                </div>
+                
+                <nav class="space-y-1">
+                    <a href="/" class="nav-item flex items-center p-3">
+                        <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                    </a>
+                    <a href="/conversations" class="nav-item flex items-center p-3">
+                        <i class="fas fa-comments mr-3"></i>Conversations
+                    </a>
+                    <a href="/broadcast" class="nav-item flex items-center p-3">
+                        <i class="fas fa-bullhorn mr-3"></i>Broadcast
+                    </a>
+                    <a href="/content-management" class="nav-item flex items-center p-3">
+                        <i class="fas fa-folder mr-3"></i>Content Management
+                    </a>
+                    <a href="/feedback" class="nav-item active flex items-center p-3">
+                        <i class="fas fa-thumbs-down mr-3"></i>Feedback Queue
+                    </a>
+                    <a href="/corrections-hub" class="nav-item flex items-center p-3">
+                        <i class="fas fa-check-double mr-3"></i>Corrections Hub
+                    </a>
+                    <a href="/analytics" class="nav-item flex items-center p-3">
+                        <i class="fas fa-chart-bar mr-3"></i>Analytics
+                    </a>
+                    <a href="/site-issues" class="nav-item flex items-center p-3">
+                        <i class="fas fa-cogs mr-3"></i>Site Issues
+                    </a>
+                    <a href="/admin-management" class="nav-item flex items-center p-3">
+                        <i class="fas fa-user-shield mr-3"></i>Admin Management
+                    </a>
+                </nav>
+            </div>
+            <div class="mt-auto">
+                 <a href="/logout" class="nav-item flex items-center p-3">
+                    <i class="fas fa-sign-out-alt mr-3"></i>Logout
+                </a>
+            </div>
+        </div>
+        
+        <div class="flex-1 p-8 overflow-y-auto">
+            <div class="mb-8">
+                <h2 class="text-4xl font-bold text-gray-900 mb-2">Negative Feedback Queue</h2>
+                <p class="text-gray-600 text-lg">Review bot responses that students marked as unhelpful.</p>
+            </div>
+            
+            <div class="card p-8">
+                {% if selected_part %}
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900">
+                                <i class="fas fa-thumbs-down text-red-500 mr-2"></i>
+                                Reviewing Part {{ selected_part }}
+                            </h3>
+                            <p class="text-gray-600 mt-1">{{ feedback_items|length }} items requiring attention</p>
+                        </div>
+                        <a href="{{ url_for('feedback') }}" class="px-6 py-3 bg-gray-100 text-gray-800 rounded-xl hover:bg-gray-200 transition-colors font-semibold">
+                            <i class="fas fa-arrow-left mr-2"></i>Back to Parts
+                        </a>
+                    </div>
+                    
+                    <div class="feedback-container">
+                    {% if feedback_items %}
+                    <div class="space-y-4">
+                        {% for item in feedback_items %}
+                        <div class="feedback-item" data-interaction-id="{{ item.id }}" data-user-id="{{ item.user_id }}">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <span class="text-sm text-gray-600 font-semibold">
+                                            <i class="fas fa-user-circle mr-2 text-indigo-600"></i>Student <strong class="text-gray-900">{{ item.user_id }}</strong>
+                                        </span>
+                                        <span class="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                                            <i class="fas fa-clock mr-1"></i>{{ item.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                        </span>
+                                    </div>
+                                    
+                                    <p class="text-sm font-semibold text-gray-700 mb-2">Student's Question:</p>
+                                    <p class="user-query text-gray-900 mb-4 font-medium">{{ item.user_input }}</p>
+
+                                    <p class="text-sm font-semibold text-gray-700 mb-2">Bot's (Unhelpful) Response:</p>
+                                    <p class="bot-response mb-4 font-medium" style="direction: rtl; text-align: right; white-space: pre-wrap;">{{ item.bot_response }}</p>
+                                </div>
+                                
+                                <div class="flex flex-col items-end space-y-2 ml-4">
+                                    <button class="correct-btn btn-action px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 text-sm w-full"
+                                            data-query="{{ item.user_input }}"
+                                            data-bot-response="{{ item.bot_response }}">
+                                        <i class="fas fa-edit mr-2"></i>Correct
+                                    </button>
+                                    <button class="dismiss-btn btn-action px-4 py-2 bg-gray-500 text-white hover:bg-gray-600 text-sm w-full">
+                                        <i class="fas fa-times mr-2"></i>Dismiss
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                        <div class="text-center text-gray-500 py-16">
+                            <i class="fas fa-check-circle text-6xl mb-4 text-green-500"></i>
+                            <p class="text-2xl font-bold text-gray-900 mb-2">This part is empty!</p>
+                            <p class="text-gray-600">No negative feedback items in this section. Great job!</p>
+                        </div>
+                    {% endif %}
+                    </div>
+                
+                {% else %}
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-2xl font-bold text-gray-900">
+                           <i class="fas fa-tasks mr-2"></i> Please Select a Part to Review
+                        </h3>
+                        <span class="text-lg font-bold text-gray-600">Total: {{ total_count }} items</span>
+                    </div>
+
+                    {% if total_count > 0 %}
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
+                        {% for i in range(1, 11) %}
+                        <a href="{{ url_for('feedback', part=i) }}" class="part-button p-6 text-center bg-white hover:bg-blue-50">
+                            <h4 class="text-xl font-bold text-gray-800 mb-2">Admin {{ i }}</h4>
+                            <p class="text-3xl font-bold text-indigo-600">{{ part_counts[i-1] }}</p>
+                            <p class="text-sm text-gray-500 mt-1">items</p>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-gray-500 py-16">
+                        <i class="fas fa-check-circle text-6xl mb-4 text-green-500"></i>
+                        <p class="text-2xl font-bold text-gray-900 mb-2">Feedback queue is empty!</p>
+                        <p class="text-gray-600">No negative feedback from students. Great job!</p>
+                    </div>
+                    {% endif %}
+                    
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div id="correction-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl w-full max-w-2xl mx-4 shadow-2xl">
+            <div class="p-6 border-b">
+                <h3 class="text-xl font-bold text-gray-900">Correct Response</h3>
+                <p class="text-sm text-gray-500 mt-1">Choose how to apply this correction.</p>
+            </div>
+            
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Student's Question:</label>
+                    <p id="modal-question" dir="rtl" class="w-full p-4 border-2 border-gray-200 rounded-xl bg-gray-50"></p>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="modal-corrected-text" class="block text-sm font-semibold text-gray-700 mb-2">Corrected Answer:</label>
+                    <textarea id="modal-corrected-text" rows="10" dir="rtl" class="w-full p-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"></textarea>
+                </div>
+                
+                <div id="faq-options" class="hidden mt-4 p-4 border-2 bg-blue-50 rounded-xl border-blue-200">
+                    <label for="faq-file" class="block text-sm font-semibold text-gray-700 mb-2">Target FAQ File:</label>
+                    <select id="faq-file" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </select>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 p-6 border-t bg-gray-50 rounded-b-2xl">
+                <button id="cancel-correction" class="px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 transition-colors font-semibold">
+                    Cancel
+                </button>
+                <button id="save-direct-correction" class="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-semibold">
+                    <i class="fas fa-save mr-2"></i>Save Direct Correction
+                </button>
+                <button id="save-both-correction" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-semibold">
+                    <i class="fas fa-layer-group mr-2"></i>Save to Both
+                </button>
+                <button id="save-faq-correction" class="px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold">
+                    <i class="fas fa-book mr-2"></i>Save to FAQ
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+    
+    <script>
+        let currentFeedbackItem = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeEventListeners();
+        });
+        
+        function initializeEventListeners() {
+            document.querySelectorAll('.correct-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const feedbackItem = this.closest('.feedback-item');
+                    currentFeedbackItem = feedbackItem;
+                    const query = this.dataset.query;
+                    const botResponse = this.dataset.botResponse;
+                    openCorrectionModal(query, botResponse);
+                });
+            });
+            
+            document.querySelectorAll('.dismiss-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const feedbackItem = this.closest('.feedback-item');
+                    dismissFeedback(feedbackItem.dataset.interactionId);
+                });
+            });
+            
+            document.getElementById('cancel-correction').addEventListener('click', closeCorrectionModal);
+            document.getElementById('save-direct-correction').addEventListener('click', saveDirectCorrection);
+            document.getElementById('save-both-correction').addEventListener('click', saveToBoth);
+            document.getElementById('save-faq-correction').addEventListener('click', saveFaqCorrection);
+        }
+
+        async function openCorrectionModal(query, botResponse) {
+            document.getElementById('modal-question').textContent = query;
+            document.getElementById('modal-corrected-text').value = botResponse;
+            await populateFaqFiles();
+            document.getElementById('faq-options').classList.add('hidden');
+            document.getElementById('correction-modal').classList.remove('hidden');
+            document.getElementById('correction-modal').classList.add('flex');
+        }
+
+        function closeCorrectionModal() {
+            document.getElementById('correction-modal').classList.add('hidden');
+            document.getElementById('correction-modal').classList.remove('flex');
+            currentFeedbackItem = null;
+        }
+
+        async function saveDirectCorrection() {
+            if (!currentFeedbackItem) return;
+
+            const correctedText = document.getElementById('modal-corrected-text').value.trim();
+            const interactionId = currentFeedbackItem.dataset.interactionId;
+
+            if (!correctedText) {
+                showToast('Corrected answer cannot be empty.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/conversation/correct', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        interaction_id: parseInt(interactionId),
+                        corrected_text: correctedText
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Direct correction saved successfully!', 'success');
+                    closeCorrectionModal();
+                    dismissFeedback(interactionId);
+                } else {
+                    showToast('Error saving correction: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Network error: ' + error.message, 'error');
+            }
+        }
+        
+        async function saveToBoth() {
+            if (!currentFeedbackItem) return;
+
+            const originalQuestion = document.getElementById('modal-question').textContent;
+            const correctedText = document.getElementById('modal-corrected-text').value.trim();
+            const interactionId = currentFeedbackItem.dataset.interactionId;
+            let faqFile = document.getElementById('faq-file').value;
+            
+            if (!correctedText) {
+                showToast('Corrected answer cannot be empty.', 'error'); return;
+            }
+
+            const faqOptionsDiv = document.getElementById('faq-options');
+            if (faqOptionsDiv.classList.contains('hidden')) {
+                faqOptionsDiv.classList.remove('hidden');
+                showToast('Please select an FAQ file and click again to save.', 'info');
+                return;
+            }
+            
+            if (faqFile === 'new') {
+                const newFilename = prompt("Enter a name for the new FAQ file:", "new_faqs.json");
+                if (newFilename) {
+                    faqFile = newFilename.endsWith('.json') ? newFilename : newFilename + '.json';
+                } else {
+                    return;
+                }
+            }
+            
+            try {
+                const response = await fetch('/api/conversation/correct_both', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        interaction_id: parseInt(interactionId),
+                        corrected_text: correctedText,
+                        original_question: originalQuestion,
+                        faq_filename: faqFile
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    closeCorrectionModal();
+                    dismissFeedback(interactionId);
+                } else {
+                    showToast('Error saving correction: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error saving to both: ' + error.message, 'error');
+            }
+        }
+
+        async function saveFaqCorrection() {
+            if (!currentFeedbackItem) return;
+
+            const question = document.getElementById('modal-question').textContent;
+            const answer = document.getElementById('modal-corrected-text').value.trim();
+            let faqFile = document.getElementById('faq-file').value;
+            const interactionId = currentFeedbackItem.dataset.interactionId;
+            
+            if (!answer) {
+                showToast('Corrected answer cannot be empty.', 'error'); return;
+            }
+
+            const faqOptionsDiv = document.getElementById('faq-options');
+            if (faqOptionsDiv.classList.contains('hidden')) {
+                faqOptionsDiv.classList.remove('hidden');
+                showToast('Please select an FAQ file and click again to save.', 'info');
+                return;
+            }
+            
+            if (faqFile === 'new') {
+                const newFilename = prompt("Enter a name for the new FAQ file:", "new_faqs.json");
+                if (newFilename) {
+                    faqFile = newFilename.endsWith('.json') ? newFilename : newFilename + '.json';
+                } else {
+                    return;
+                }
+            }
+            
+            try {
+                const faqResponse = await fetch('/api/faq/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: faqFile, question: question, answer: answer })
+                });
+                
+                const faqResult = await faqResponse.json();
+                if (faqResult.success) {
+                    showToast(faqResult.message, 'success');
+                    closeCorrectionModal();
+                    dismissFeedback(interactionId); 
+                } else {
+                    showToast('Error adding FAQ: ' + faqResult.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error adding FAQ: ' + error.message, 'error');
+            }
+        }
+        
+        async function dismissFeedback(interactionId) {
+            const feedbackItem = document.querySelector(`[data-interaction-id="${interactionId}"]`);
+            if (!feedbackItem) return;
+
+            try {
+                const response = await fetch('/api/feedback/dismiss', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ interaction_id: parseInt(interactionId) })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Feedback item processed.', 'success');
+                    feedbackItem.style.transition = 'opacity 0.3s ease-out';
+                    feedbackItem.style.opacity = '0';
+                    setTimeout(() => {
+                        feedbackItem.remove();
+                        const container = document.querySelector('.feedback-container .space-y-4');
+                        if (container && container.children.length === 0) {
+                             setTimeout(() => window.location.href = '/feedback', 500);
+                        }
+                    }, 300);
+                } else {
+                    showToast('Error: ' + (result.error || 'Could not dismiss feedback.'), 'error');
+                }
+            } catch (error) {
+                showToast('Network error: ' + error.message, 'error');
+            }
+        }
+
+        async function populateFaqFiles() {
+            const selectElement = document.getElementById('faq-file');
+            selectElement.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/faqs/list');
+                const result = await response.json();
+                
+                if (result.success && result.files.length > 0) {
+                    result.files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file;
+                        selectElement.appendChild(option);
+                    });
+                } else {
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = "general_faqs.json";
+                    defaultOption.textContent = "general_faqs.json (Will be created)";
+                    selectElement.appendChild(defaultOption);
+                }
+    
+                const newOption = document.createElement('option');
+                newOption.value = 'new';
+                newOption.textContent = 'Create New FAQ File...';
+                selectElement.appendChild(newOption);
+                
+            } catch (error) {
+                showToast('Could not load FAQ files.', 'error');
+            }
+        }
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-xl shadow-lg text-white transform translate-x-full transition-transform duration-300 mb-2 ${
+                type === 'success' ? 'bg-gradient-to-r from-green-500 to-green-800' : 
+                type === 'error' ? 'bg-gradient-to-r from-red-500 to-pink-600' : 
+                'bg-gradient-to-r from-blue-500 to-indigo-600'
+            }`;
+            toast.textContent = message;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

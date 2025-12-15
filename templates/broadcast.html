@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broadcast Center - AI Agent Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        
+        :root {
+            --primary: #6366F1;
+            --secondary: #8B5CF6;
+        }
+        
+        body { background: #F9FAFB; }
+        
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            box-shadow: 4px 0 24px rgba(99, 102, 241, 0.12);
+        }
+        
+        .nav-item {
+            transition: all 0.2s ease;
+            border-radius: 12px;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(4px);
+        }
+        
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(99, 102, 241, 0.08);
+        }
+        
+        .tab-button {
+            padding: 16px 28px;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            font-weight: 600;
+            border-radius: 12px 12px 0 0;
+            color: #6B7280;
+        }
+        
+        .tab-button.active {
+            background: white;
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .tab-button:hover:not(.active) {
+            background: #F3F4F6;
+            color: #374151;
+        }
+
+        .dropzone {
+            border: 3px dashed #D1D5DB;
+            border-radius: 16px;
+            padding: 48px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+        }
+
+        .dropzone.dragover {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border-color: var(--primary);
+            transform: scale(1.02);
+        }
+
+        .dz-message {
+            color: #6B7280;
+        }
+        
+        .user-count-badge {
+            background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.25);
+        }
+        
+        .send-button {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+        }
+        
+        .send-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .send-button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .quiz-question-card {
+            border: 2px solid #E5E7EB;
+            border-radius: 16px;
+            padding: 24px;
+            background: white;
+            transition: all 0.2s ease;
+        }
+        
+        .quiz-question-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
+        }
+
+        .target-mode-selector {
+            background: #F3F4F6;
+            border-radius: 12px;
+            padding: 4px;
+            display: inline-flex;
+            gap: 4px;
+            margin-bottom: 24px;
+        }
+
+        .target-mode-btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: #6B7280;
+        }
+
+        .target-mode-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+        }
+
+        .user-ids-input {
+            background: #F9FAFB;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+
+        .user-ids-input:focus {
+            background: white;
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .info-badge {
+            background: #EFF6FF;
+            color: #1E40AF;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen" x-data="broadcastApp()">
+        <div class="sidebar w-64 text-white p-6 flex flex-col">
+            <div>
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold tracking-tight">AI Agent Dashboard</h1>
+                    <p class="text-sm opacity-80 mt-1">Dr. Nasser Chemistry Bot</p>
+                </div>
+                
+                <nav class="space-y-1">
+                    <a href="/" class="nav-item flex items-center p-3">
+                        <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                    </a>
+                    <a href="/conversations" class="nav-item flex items-center p-3">
+                        <i class="fas fa-comments mr-3"></i>Conversations
+                    </a>
+                    <a href="/broadcast" class="nav-item active flex items-center p-3">
+                        <i class="fas fa-bullhorn mr-3"></i>Broadcast
+                    </a>
+                    <a href="/content-management" class="nav-item flex items-center p-3">
+                        <i class="fas fa-folder mr-3"></i>Content Management
+                    </a>
+                    <a href="/feedback" class="nav-item flex items-center p-3">
+                        <i class="fas fa-thumbs-down mr-3"></i>Feedback Queue
+                    </a>
+                    <a href="/corrections-hub" class="nav-item flex items-center p-3">
+                        <i class="fas fa-check-double mr-3"></i>Corrections Hub
+                    </a>
+                    <a href="/analytics" class="nav-item flex items-center p-3">
+                        <i class="fas fa-chart-bar mr-3"></i>Analytics
+                    </a>
+                    <a href="/site-issues" class="nav-item flex items-center p-3">
+                        <i class="fas fa-cogs mr-3"></i>Site Issues
+                    </a>
+                    <a href="/admin-management" class="nav-item flex items-center p-3">
+                        <i class="fas fa-user-shield mr-3"></i>Admin Management
+                    </a>
+                </nav>
+            </div>
+            <div class="mt-auto">
+                 <a href="/logout" class="nav-item flex items-center p-3">
+                    <i class="fas fa-sign-out-alt mr-3"></i>Logout
+                </a>
+            </div>
+        </div>
+       
+        <div class="flex-1 p-8 overflow-y-auto">
+            <div class="mb-8">
+                <h2 class="text-4xl font-bold text-gray-900 mb-2">Broadcast Center</h2>
+                <p class="text-gray-600 text-lg">Send announcements, media, and quizzes to all active users or specific users</p>
+            </div>
+        
+            
+            <!-- Target Mode Selector -->
+            <div class="card p-6 mb-6">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Select Recipients</h3>
+                <div class="target-mode-selector">
+                    <button class="target-mode-btn" :class="{'active': targetMode === 'all'}" @click="targetMode = 'all'">
+                        <i class="fas fa-users mr-2"></i>All Users
+                    </button>
+                    <button class="target-mode-btn" :class="{'active': targetMode === 'specific'}" @click="targetMode = 'specific'">
+                        <i class="fas fa-user-tag mr-2"></i>Specific Users
+                    </button>
+                </div>
+
+                <div x-show="targetMode === 'specific'" x-cloak class="mt-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">Enter User IDs (comma-separated):</label>
+                    <textarea 
+                        x-model="targetUserIds" 
+                        rows="3" 
+                        class="user-ids-input w-full resize-none" 
+                        placeholder="e.g., 123456789, 987654321, 456789123"
+                    ></textarea>
+                    <div class="mt-3 info-badge">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Enter Telegram user IDs separated by commas. The broadcast will be sent only to these users.</span>
+                    </div>
+                    <div x-show="parsedUserIds.length > 0" class="mt-3 text-sm font-semibold text-green-600">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        <span x-text="parsedUserIds.length + ' user(s) will receive this broadcast'"></span>
+                    </div>
+                </div>
+
+                <div x-show="targetMode === 'all'" x-cloak class="mt-4">
+                    <div class="info-badge">
+                        <i class="fas fa-broadcast-tower"></i>
+                        <span>This broadcast will be sent to all <strong>{{ total_users }}</strong> active users</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card p-8">
+                <div class="flex border-b mb-8 gap-2" style="border-color: #E5E7EB;">
+                    <button class="tab-button" :class="{'active': activeTab === 'announcement'}" @click="activeTab = 'announcement'">
+                        <i class="fas fa-image mr-2"></i>Announcement
+                    </button>
+                    <button class="tab-button" :class="{'active': activeTab === 'video'}" @click="activeTab = 'video'">
+                        <i class="fas fa-video mr-2"></i>Video
+                    </button>
+                    <button class="tab-button" :class="{'active': activeTab === 'voice'}" @click="activeTab = 'voice'">
+                        <i class="fas fa-microphone-alt mr-2"></i>Voice Note
+                    </button>
+                    <button class="tab-button" :class="{'active': activeTab === 'pdf'}" @click="activeTab = 'pdf'">
+                        <i class="fas fa-file-pdf mr-2"></i>PDF Document
+                    </button>
+                    <button class="tab-button" :class="{'active': activeTab === 'quiz'}" @click="activeTab = 'quiz'">
+                        <i class="fas fa-poll mr-2"></i>Quiz
+                    </button>
+                </div>
+
+                <div>
+                    <!-- Announcement Tab -->
+                    <div x-show="activeTab === 'announcement'" x-cloak>
+                        <form @submit.prevent="sendBroadcast('announcement')" class="space-y-6">
+                            <h3 class="text-2xl font-bold text-gray-900">Send Announcement (Image)</h3>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">Image File:</label>
+                                <div @click="$refs.announcementFile.click()" 
+                                     @dragover.prevent="handleDragOver($event)" 
+                                     @dragleave.prevent="handleDragLeave($event)"
+                                     @drop.prevent="handleDrop($event, 'announcement')"
+                                     class="dropzone">
+                                    <input type="file" x-ref="announcementFile" @change="handleFileSelect($event, 'announcement')" class="hidden" accept="image/*">
+                                    <div class="dz-message">
+                                        <i class="fas fa-cloud-upload-alt text-6xl text-indigo-400 mb-4"></i>
+                                        <p class="text-lg font-semibold mb-2">Drag & drop an image here</p>
+                                        <p class="text-sm">or click to select a file</p>
+                                        <p class="text-xs text-gray-400 mt-3">Max file size: 16MB • Formats: JPG, PNG, GIF</p>
+                                    </div>
+                                </div>
+                                <p x-show="files.announcement" class="mt-3 text-sm text-gray-600 font-semibold" x-text="'Selected: ' + (files.announcement ? files.announcement.name : '')"></p>
+                            </div>
+                            <div>
+                                <label for="announcement-caption" class="block text-sm font-semibold text-gray-700 mb-3">Caption:</label>
+                                <textarea x-model="captions.announcement" rows="4" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" placeholder="Enter a caption for the announcement..."></textarea>
+                            </div>
+                            <div>
+                                <button type="submit" class="send-button w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3">
+                                    <i class="fas fa-paper-plane"></i>
+                                    <span x-text="targetMode === 'all' ? 'Send Announcement to All Users' : 'Send Announcement to Selected Users'"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Video Tab -->
+                    <div x-show="activeTab === 'video'" x-cloak>
+                        <form @submit.prevent="sendBroadcast('video')" class="space-y-6">
+                            <h3 class="text-2xl font-bold text-gray-900">Send Video</h3>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">Video File:</label>
+                                <div @click="$refs.videoFile.click()" 
+                                     @dragover.prevent="handleDragOver($event)" 
+                                     @dragleave.prevent="handleDragLeave($event)"
+                                     @drop.prevent="handleDrop($event, 'video')"
+                                     class="dropzone">
+                                    <input type="file" x-ref="videoFile" @change="handleFileSelect($event, 'video')" class="hidden" accept="video/*">
+                                    <div class="dz-message">
+                                        <i class="fas fa-video text-6xl text-purple-400 mb-4"></i>
+                                        <p class="text-lg font-semibold mb-2">Drag & drop a video here</p>
+                                        <p class="text-sm">or click to select a file</p>
+                                        <p class="text-xs text-gray-400 mt-3">Max file size: 16MB • Formats: MP4, MOV, AVI</p>
+                                    </div>
+                                </div>
+                                <p x-show="files.video" class="mt-3 text-sm text-gray-600 font-semibold" x-text="'Selected: ' + (files.video ? files.video.name : '')"></p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">Caption:</label>
+                                <textarea x-model="captions.video" rows="4" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" placeholder="Enter a caption for the video..."></textarea>
+                            </div>
+                            <div>
+                                <button type="submit" class="send-button w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3">
+                                    <i class="fas fa-paper-plane"></i>
+                                    <span x-text="targetMode === 'all' ? 'Send Video to All Users' : 'Send Video to Selected Users'"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Voice Tab -->
+                    <div x-show="activeTab === 'voice'" x-cloak>
+                        <form @submit.prevent="sendBroadcast('voice')" class="space-y-6">
+                            <h3 class="text-2xl font-bold text-gray-900">Send Voice Note</h3>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">Audio File:</label>
+                                <div @click="$refs.voiceFile.click()" 
+                                     @dragover.prevent="handleDragOver($event)" 
+                                     @dragleave.prevent="handleDragLeave($event)"
+                                     @drop.prevent="handleDrop($event, 'voice')"
+                                     class="dropzone">
+                                    <input type="file" x-ref="voiceFile" @change="handleFileSelect($event, 'voice')" class="hidden" accept="audio/*">
+                                    <div class="dz-message">
+                                        <i class="fas fa-microphone text-6xl text-green-400 mb-4"></i>
+                                        <p class="text-lg font-semibold mb-2">Drag & drop an audio file here</p>
+                                        <p class="text-sm">or click to select a file</p>
+                                        <p class="text-xs text-gray-400 mt-3">Max file size: 16MB • Formats: MP3, WAV, M4A</p>
+                                    </div>
+                                </div>
+                                <p x-show="files.voice" class="mt-3 text-sm text-gray-600 font-semibold" x-text="'Selected: ' + (files.voice ? files.voice.name : '')"></p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">Caption:</label>
+                                <textarea x-model="captions.voice" rows="4" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" placeholder="Enter a caption for the voice note..."></textarea>
+                            </div>
+                            <div>
+                                <button type="submit" class="send-button w-full px-6 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3">
+                                    <i class="fas fa-paper-plane"></i>
+                                    <span x-text="targetMode === 'all' ? 'Send Voice Note to All Users' : 'Send Voice Note to Selected Users'"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- PDF Tab -->
+                    <div x-show="activeTab === 'pdf'" x-cloak>
+                        <form @submit.prevent="sendBroadcast('pdf')" class="space-y-6">
+                            <h3 class="text-2xl font-bold text-gray-900">Send PDF Document</h3>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">PDF File:</label>
+                                <div @click="$refs.pdfFile.click()" 
+                                     @dragover.prevent="handleDragOver($event)" 
+                                     @dragleave.prevent="handleDragLeave($event)"
+                                     @drop.prevent="handleDrop($event, 'pdf')"
+                                     class="dropzone">
+                                    <input type="file" x-ref="pdfFile" @change="handleFileSelect($event, 'pdf')" class="hidden" accept=".pdf">
+                                    <div class="dz-message">
+                                        <i class="fas fa-file-pdf text-6xl text-red-400 mb-4"></i>
+                                        <p class="text-lg font-semibold mb-2">Drag & drop a PDF file here</p>
+                                        <p class="text-sm">or click to select a file</p>
+                                        <p class="text-xs text-gray-400 mt-3">Max file size: 16MB</p>
+                                    </div>
+                                </div>
+                                <p x-show="files.pdf" class="mt-3 text-sm text-gray-600 font-semibold" x-text="'Selected: ' + (files.pdf ? files.pdf.name : '')"></p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-3">Caption:</label>
+                                <textarea x-model="captions.pdf" rows="4" class="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" placeholder="Enter a caption for the PDF..."></textarea>
+                            </div>
+                            <div>
+                                <button type="submit" class="send-button w-full px-6 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3">
+                                    <i class="fas fa-paper-plane"></i>
+                                    <span x-text="targetMode === 'all' ? 'Send PDF to All Users' : 'Send PDF to Selected Users'"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Quiz Tab -->
+                    <div x-show="activeTab === 'quiz'" x-cloak>
+                        <form @submit.prevent="sendQuiz()" class="space-y-8">
+                            <h3 class="text-2xl font-bold text-gray-900">Create 5-Question Quiz</h3>
+                            
+                            <div class="space-y-6">
+                                <template x-for="(question, qIndex) in quizQuestions" :key="qIndex">
+                                    <div class="quiz-question-card">
+                                        <h4 class="text-xl font-bold text-gray-900 mb-4">
+                                            Question <span x-text="qIndex + 1"></span>
+                                        </h4>
+                                        <div class="space-y-4">
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 mb-2">Question Text:</label>
+                                                <input type="text" x-model="question.text" class="w-full p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="e.g., What is the capital of Egypt?">
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-semibold text-gray-700 mb-3">Options (select correct answer):</label>
+                                                <div class="space-y-2">
+                                                    <template x-for="(option, oIndex) in question.options" :key="oIndex">
+                                                        <div class="flex items-center gap-3">
+                                                            <input type="radio" :name="'correct-' + qIndex" :value="oIndex" x-model="question.correctOption" class="w-5 h-5 text-indigo-600">
+                                                            <input type="text" x-model="question.options[oIndex]" class="flex-1 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent" :placeholder="'Option ' + (oIndex + 1)">
+                                                            <button type="button" @click="removeOption(qIndex, oIndex)" x-show="question.options.length > 2" class="text-red-500 hover:text-red-700 text-xl font-bold px-3">
+                                                                <i class="fas fa-times-circle"></i>
+                                                            </button>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                                <button type="button" @click="addOption(qIndex)" class="mt-3 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-semibold">
+                                                    <i class="fas fa-plus mr-2"></i>Add Option
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <button type="submit" class="send-button w-full px-6 py-4 bg-gradient-to-r from-yellow-500 to-orange-600 text-white rounded-xl font-bold text-lg flex items-center justify-center gap-3">
+                                <i class="fas fa-paper-plane"></i>
+                                <span x-text="targetMode === 'all' ? 'Send Quiz to All Users' : 'Send Quiz to Selected Users'"></span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function broadcastApp() {
+            return {
+                activeTab: 'announcement',
+                targetMode: 'all',
+                targetUserIds: '',
+                files: { announcement: null, video: null, voice: null, pdf: null },
+                captions: { announcement: '', video: '', voice: '', pdf: '' },
+                quizQuestions: [
+                    { text: '', options: ['', ''], correctOption: 0 },
+                    { text: '', options: ['', ''], correctOption: 0 },
+                    { text: '', options: ['', ''], correctOption: 0 },
+                    { text: '', options: ['', ''], correctOption: 0 },
+                    { text: '', options: ['', ''], correctOption: 0 }
+                ],
+                
+                get parsedUserIds() {
+                    if (this.targetMode !== 'specific' || !this.targetUserIds.trim()) {
+                        return [];
+                    }
+                    return this.targetUserIds
+                        .split(',')
+                        .map(id => id.trim())
+                        .filter(id => id && /^\d+$/.test(id));
+                },
+                
+                handleDragOver(e) {
+                    e.currentTarget.classList.add('dragover');
+                },
+                
+                handleDragLeave(e) {
+                    e.currentTarget.classList.remove('dragover');
+                },
+                
+                handleDrop(e, type) {
+                    e.currentTarget.classList.remove('dragover');
+                    if (e.dataTransfer.files.length) {
+                        this.files[type] = e.dataTransfer.files[0];
+                    }
+                },
+                
+                handleFileSelect(e, type) {
+                    if (e.target.files.length) {
+                        this.files[type] = e.target.files[0];
+                    }
+                },
+                
+                validateTargetUserIds() {
+                    if (this.targetMode === 'specific') {
+                        if (this.parsedUserIds.length === 0) {
+                            showToast('Please enter at least one valid user ID', 'error');
+                            return false;
+                        }
+                    }
+                    return true;
+                },
+                
+                addOption(qIndex) {
+                    this.quizQuestions[qIndex].options.push('');
+                },
+                
+                removeOption(qIndex, oIndex) {
+                    this.quizQuestions[qIndex].options.splice(oIndex, 1);
+                },
+                
+                async sendBroadcast(type) {
+                    if (!this.files[type]) {
+                        showToast('Please select a file', 'error');
+                        return;
+                    }
+                    
+                    if (!this.validateTargetUserIds()) {
+                        return;
+                    }
+                    
+                    const formData = new FormData();
+                    formData.append('broadcast_type', type);
+                    formData.append('file', this.files[type]);
+                    formData.append('caption', this.captions[type]);
+                    formData.append('target_mode', this.targetMode);
+                    
+                    if (this.targetMode === 'specific') {
+                        formData.append('target_user_ids', JSON.stringify(this.parsedUserIds));
+                    }
+                    
+                    try {
+                        const response = await fetch('/api/broadcast/send', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            showToast(result.message, 'success');
+                            this.files[type] = null;
+                            this.captions[type] = '';
+                            if (this.targetMode === 'specific') {
+                                this.targetUserIds = '';
+                            }
+                        } else {
+                            showToast('Error: ' + result.error, 'error');
+                        }
+                    } catch (error) {
+                        showToast('Network error: ' + error.message, 'error');
+                    }
+                },
+                
+                async sendQuiz() {
+                    // Validate quiz
+                    for (let i = 0; i < this.quizQuestions.length; i++) {
+                        const q = this.quizQuestions[i];
+                        if (!q.text.trim()) {
+                            showToast(`Please enter text for Question ${i + 1}`, 'error');
+                            return;
+                        }
+                        if (q.options.some(opt => !opt.trim())) {
+                            showToast(`Please fill all options for Question ${i + 1}`, 'error');
+                            return;
+                        }
+                        if (q.correctOption === null) {
+                            showToast(`Please select a correct answer for Question ${i + 1}`, 'error');
+                            return;
+                        }
+                    }
+                    
+                    if (!this.validateTargetUserIds()) {
+                        return;
+                    }
+                    
+                    const quizData = this.quizQuestions.map(q => ({
+                        question: q.text,
+                        options: q.options,
+                        correct_option_id: q.correctOption
+                    }));
+                    
+                    const formData = new FormData();
+                    formData.append('broadcast_type', 'quiz');
+                    formData.append('quiz_data', JSON.stringify(quizData));
+                    formData.append('target_mode', this.targetMode);
+                    
+                    if (this.targetMode === 'specific') {
+                        formData.append('target_user_ids', JSON.stringify(this.parsedUserIds));
+                    }
+                    
+                    try {
+                        const response = await fetch('/api/broadcast/send', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const result = await response.json();
+                        if (result.success) {
+                            showToast(result.message, 'success');
+                            // Reset quiz
+                            this.quizQuestions = [
+                                { text: '', options: ['', ''], correctOption: 0 },
+                                { text: '', options: ['', ''], correctOption: 0 },
+                                { text: '', options: ['', ''], correctOption: 0 },
+                                { text: '', options: ['', ''], correctOption: 0 },
+                                { text: '', options: ['', ''], correctOption: 0 }
+                            ];
+                            if (this.targetMode === 'specific') {
+                                this.targetUserIds = '';
+                            }
+                        } else {
+                            showToast('Error: ' + result.error, 'error');
+                        }
+                    } catch (error) {
+                        showToast('Network error: ' + error.message, 'error');
+                    }
+                }
+            }
+        }
+        
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 p-4 rounded-xl shadow-lg text-white transform translate-x-full transition-all duration-300 z-50 ${
+                type === 'success' ? 'bg-gradient-to-r from-green-500 to-green-600' : 
+                type === 'error' ? 'bg-gradient-to-r from-red-500 to-red-600' : 
+                'bg-gradient-to-r from-blue-500 to-indigo-600'
+            }`;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

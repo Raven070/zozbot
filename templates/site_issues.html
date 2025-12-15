@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Issues - AI Agent Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js"></script>
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        
+        :root {
+            --primary: #6366F1;
+            --secondary: #8B5CF6;
+        }
+        
+        body { background: #F9FAFB; }
+        
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            box-shadow: 4px 0 24px rgba(99, 102, 241, 0.12);
+        }
+        
+        .nav-item {
+            transition: all 0.2s ease;
+            border-radius: 12px;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(4px);
+        }
+        
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(99, 102, 241, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .issue-row {
+            transition: all 0.3s ease;
+        }
+        
+        .issue-row:hover {
+            background: linear-gradient(90deg, #F9FAFB 0%, #F3F4F6 100%);
+        }
+        
+        .category-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #E5E7EB;
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+        }
+        
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+        
+        .category-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .category-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 32px rgba(99, 102, 241, 0.2);
+            border-color: var(--primary);
+        }
+        
+        .category-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .category-card:hover .category-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .btn-resolve, .btn-message {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-resolve:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-message {
+            background-color: #3B82F6; /* blue-500 */
+        }
+        
+        .btn-message:hover {
+            transform: translateY(-2px);
+            background-color: #2563EB; /* blue-600 */
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        /* Modal Styles */
+        [x-cloak] { display: none; }
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .modal-body {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body x-data="messageModal()" x-cloak>
+    <div class="flex h-screen">
+        <div class="sidebar w-64 text-white p-6 flex flex-col">
+            <div>
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold tracking-tight">AI Agent Dashboard</h1>
+                    <p class="text-sm opacity-80 mt-1">Dr. Nasser Chemistry Bot</p>
+                </div>
+                <nav class="space-y-1">
+                    <a href="/" class="nav-item flex items-center p-3">
+                        <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                    </a>
+                    <a href="/conversations" class="nav-item flex items-center p-3">
+                        <i class="fas fa-comments mr-3"></i>Conversations
+                    </a>
+                    <a href="/broadcast" class="nav-item flex items-center p-3">
+                        <i class="fas fa-bullhorn mr-3"></i>Broadcast
+                    </a>
+                    <a href="/content-management" class="nav-item flex items-center p-3">
+                        <i class="fas fa-folder mr-3"></i>Content Management
+                    </a>
+                    <a href="/feedback" class="nav-item flex items-center p-3">
+                        <i class="fas fa-thumbs-down mr-3"></i>Feedback Queue
+                    </a>
+                    <a href="/corrections-hub" class="nav-item flex items-center p-3">
+                        <i class="fas fa-check-double mr-3"></i>Corrections Hub
+                    </a>
+                    <a href="/analytics" class="nav-item flex items-center p-3">
+                        <i class="fas fa-chart-bar mr-3"></i>Analytics
+                    </a>
+                     <a href="/site-issues" class="nav-item active flex items-center p-3">
+                        <i class="fas fa-cogs mr-3"></i>Site Issues
+                    </a>
+                    <a href="/admin-management" class="nav-item flex items-center p-3">
+                        <i class="fas fa-user-shield mr-3"></i>Admin Management
+                    </a>
+                </nav>
+            </div>
+            <div class="mt-auto">
+                 <a href="/logout" class="nav-item flex items-center p-3">
+                    <i class="fas fa-sign-out-alt mr-3"></i>Logout
+                </a>
+            </div>
+        </div>
+        
+        <div class="flex-1 p-8 overflow-y-auto">
+            {% if selected_category %}
+            <div class="mb-8 flex items-center justify-between">
+                <div>
+                    <h2 class="text-4xl font-bold text-gray-900 mb-2">{{ selected_category.replace('_', ' ')|title }}</h2>
+                    <p class="text-gray-600 text-lg">Review and resolve these specific issues.</p>
+                </div>
+                <a href="{{ url_for('site_issues') }}" class="px-6 py-3 bg-gray-100 text-gray-800 rounded-xl hover:bg-gray-200 transition-colors font-semibold">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Categories
+                </a>
+            </div>
+
+            <div class="card p-8">
+                {% if issues %}
+                <div class="overflow-hidden rounded-xl border-2 border-gray-100">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+                            <tr>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Submitted At</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Student Code</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Student ID</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Session No.</th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for issue in issues %}
+                            <tr class="issue-row" id="issue-{{ issue.id }}">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{{ issue.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{{ issue.student_code }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">Student {{ issue.get('user_id', 'N/A') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ issue.get('session_number', 'N/A') }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                                    <button class="resolve-btn btn-resolve px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold" data-id="{{ issue.id }}">
+                                        <i class="fas fa-check mr-2"></i> Mark as Resolved
+                                    </button>
+                                    <button class="btn-message px-4 py-2 text-white rounded-xl font-semibold"
+                                            @click="openModal('{{ issue.get('user_id') }}', '{{ issue.id }}')">
+                                        <i class="fas fa-paper-plane mr-2"></i> Send & Resolve
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-gray-500 py-16">
+                    <i class="fas fa-check-circle text-6xl mb-4 text-green-500"></i>
+                    <p class="text-2xl font-bold text-gray-900 mb-2">Issue queue for this category is empty!</p>
+                    <p class="text-gray-600">All issues have been resolved. Great work!</p>
+                </div>
+                {% endif %}
+            </div>
+
+            {% else %}
+            <div class="mb-8">
+                <h2 class="text-4xl font-bold text-gray-900 mb-2">Site Issue Categories</h2>
+                <p class="text-gray-600 text-lg">Select a category to view and manage open issues.</p>
+            </div>
+            
+            {% if total_count > 0 %}
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <a href="{{ url_for('site_issues', view='reopen_session') }}" class="category-card card p-8 text-center block">
+                    <div class="category-icon mx-auto" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+                        <i class="fas fa-play-circle text-4xl text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Reopen Session</h3>
+                    <p class="text-5xl font-extrabold text-blue-600 mb-2">{{ category_counts.reopen_session }}</p>
+                    <p class="text-sm text-gray-500 font-semibold">open issues</p>
+                </a>
+                <a href="{{ url_for('site_issues', view='extend_deadline') }}" class="category-card card p-8 text-center block">
+                    <div class="category-icon mx-auto" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
+                        <i class="fas fa-calendar-plus text-4xl text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Extend Deadline</h3>
+                    <p class="text-5xl font-extrabold text-yellow-600 mb-2">{{ category_counts.extend_deadline }}</p>
+                    <p class="text-sm text-gray-500 font-semibold">open issues</p>
+                </a>
+                <a href="{{ url_for('site_issues', view='remove_block') }}" class="category-card card p-8 text-center block">
+                    <div class="category-icon mx-auto" style="background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);">
+                        <i class="fas fa-unlock-alt text-4xl text-white"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Remove Block</h3>
+                    <p class="text-5xl font-extrabold text-red-600 mb-2">{{ category_counts.remove_block }}</p>
+                    <p class="text-sm text-gray-500 font-semibold">open issues</p>
+                </a>
+            </div>
+            {% else %}
+            <div class="card p-8">
+                <div class="text-center text-gray-500 py-16">
+                    <i class="fas fa-check-circle text-6xl mb-4 text-green-500"></i>
+                    <p class="text-2xl font-bold text-gray-900 mb-2">All issue queues are empty!</p>
+                    <p class="text-gray-600">No pending site issues from students. Great work!</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% endif %}
+        </div>
+    </div>
+    
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+
+    <div x-show="showModal"
+         class="fixed inset-0 z-40 flex items-center justify-center"
+         style="backdrop-filter: blur(4px);">
+        <div class_name="modal-overlay fixed inset-0 bg-black opacity-50"
+             @click="showModal = false"></div>
+        
+        <div class="modal-body bg-white rounded-2xl shadow-xl z-50 p-8 w-full max-w-lg m-4"
+             x-show="showModal"
+             x-transition:enter="ease-out duration-300"
+             x-transition:enter-start="opacity-0 transform scale-90"
+             x-transition:enter-end="opacity-100 transform scale-100"
+             x-transition:leave="ease-in duration-200"
+             x-transition:leave-start="opacity-100 transform scale-100"
+             x-transition:leave-end="opacity-0 transform scale-90">
+            
+            <h3 class="text-2xl font-bold text-gray-900 mb-4">Send Message & Resolve Issue for Student <span x-text="currentUserId" class="text-indigo-600"></span></h3>
+            <p class="text-gray-600 mb-6">This message will be sent directly to the student and the issue will be marked as resolved.</p>
+            
+            <textarea x-model="messageText"
+                      rows="5"
+                      class="w-full p-3 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:ring-indigo-500 transition-colors"
+                      placeholder="Type your message here... e.g., 'We have revised your account and you have exceeded your limits in reopening session, please contact us on the page'"></textarea>
+            
+            <div class="flex justify-end space-x-4 mt-6">
+                <button @click="showModal = false"
+                        class="px-6 py-2 bg-gray-100 text-gray-800 rounded-xl hover:bg-gray-200 transition-colors font-semibold">
+                    Cancel
+                </button>
+                <button @click="sendMessage()"
+                        class="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-semibold">
+                    <i class="fas fa-paper-plane mr-2"></i> Send & Resolve
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Alpine.js data logic for the modal
+        function messageModal() {
+            return {
+                showModal: false,
+                messageText: '',
+                currentUserId: null,
+                currentIssueId: null, // <-- ADDED THIS
+                
+                openModal(userId, issueId) { // <-- UPDATED HERE
+                    this.currentUserId = userId;
+                    this.currentIssueId = issueId; // <-- ADDED THIS
+                    this.messageText = '';
+                    this.showModal = true;
+                },
+                
+                async sendMessage() {
+                    if (!this.messageText.trim()) {
+                        showToast('Message cannot be empty', 'error');
+                        return;
+                    }
+                    
+                    if (!this.currentIssueId) {
+                        showToast('Error: Issue ID is missing', 'error');
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch('/api/issues/send-message', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                user_id: this.currentUserId,
+                                issue_id: this.currentIssueId, // <-- ADDED THIS
+                                message: this.messageText 
+                            })
+                        });
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            showToast(result.message, 'success');
+                            this.showModal = false;
+                            this.messageText = '';
+
+                            // --- ADDED THIS ---
+                            // This is the same logic from resolveIssue()
+                            const rowElement = document.getElementById(`issue-${this.currentIssueId}`);
+                            if (rowElement) {
+                                rowElement.style.opacity = '0';
+                                setTimeout(() => {
+                                    rowElement.remove();
+                                    const tbody = document.querySelector('tbody');
+                                    if (tbody && tbody.children.length === 0) {
+                                        window.location.reload(); 
+                                    }
+                                }, 300);
+                            }
+                            // --- END OF ADDED BLOCK ---
+
+                        } else {
+                            showToast('Error: ' + result.error, 'error');
+                        }
+                    } catch (error) {
+                        showToast('Network error: ' + error.message, 'error');
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.resolve-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const issueId = this.dataset.id;
+                    resolveIssue(issueId);
+                });
+            });
+        });
+
+        async function resolveIssue(id) {
+            const rowElement = document.getElementById(`issue-${id}`);
+            if (!rowElement) return;
+
+            try {
+                const response = await fetch('/api/issues/resolve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    rowElement.style.opacity = '0';
+                    setTimeout(() => {
+                        rowElement.remove();
+                        const tbody = document.querySelector('tbody');
+                        if (tbody && tbody.children.length === 0) {
+                            window.location.reload(); 
+                        }
+                    }, 300);
+                } else {
+                    showToast('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Network error: ' + error.message, 'error');
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-xl shadow-lg text-white transform translate-x-full transition-transform duration-300 mb-2 ${
+                type === 'success' ? 'bg-gradient-to-r from-green-500 to-green-800' : 
+                type === 'error' ? 'bg-gradient-to-r from-red-500 to-pink-600' : 
+                'bg-gradient-to-r from-blue-500 to-indigo-600'
+            }`;
+            toast.textContent = message;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

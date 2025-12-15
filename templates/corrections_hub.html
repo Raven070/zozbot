@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Corrections Hub - AI Agent Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        
+        :root {
+            --primary: #6366F1;
+            --secondary: #8B5CF6;
+            --accent: #A5B4FC;
+            --pending: #EF4444;
+        }
+        
+        body { background: #F9FAFB; }
+        
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary) 0%, var(--secondary) 100%);
+            box-shadow: 4px 0 24px rgba(99, 102, 241, 0.12);
+        }
+        
+        .nav-item {
+            transition: all 0.2s ease;
+            border-radius: 12px;
+        }
+        
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(4px);
+        }
+        
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 16px rgba(99, 102, 241, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .correction-item {
+            border-left: 4px solid var(--primary);
+            transition: all 0.2s ease;
+        }
+        
+        .pending-item {
+            border-left: 4px solid var(--pending);
+            background: linear-gradient(135deg, #FFFFFF 0%, #FEF2F2 100%);
+        }
+        
+        .correction-item:hover, .pending-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+        }
+        
+        .cached-message {
+         background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+        border-left: 4px solid #F59E0B;
+}
+
+.cached-indicator {
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: #F59E0B;
+    color: white;
+}
+        .search-box {
+            background: white;
+            border: 2px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 12px 16px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        
+        .search-box:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            outline: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+            border-left: 4px solid var(--primary);
+            cursor: default;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card.clickable {
+            cursor: pointer;
+        }
+        
+        .stat-card.clickable:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+        }
+        
+        .stat-card.pending-stat {
+            background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+            border-left-color: var(--pending);
+        }
+        
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-success { background: #E0F2F1; color: #10B981; }
+        .badge-warning { background: #FEF3C7; color: #92400E; }
+        .badge-info { background: #DBEAFE; color: #1E40AF; }
+        .badge-danger { background: #FEE2E2; color: #DC2626; }
+        
+        .tab-button {
+            padding: 12px 24px;
+            border-radius: 12px 12px 0 0;
+            transition: all 0.3s;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-button.active {
+            background: white;
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .tab-button:not(.active) {
+            background: #E5E7EB;
+            color: #6B7280;
+        }
+        
+        .tab-button:not(.active):hover {
+            background: #D1D5DB;
+        }
+        
+        .modal-overlay {
+            backdrop-filter: blur(8px);
+        }
+        
+        .question-text {
+            direction: rtl;
+            text-align: right;
+            line-height: 1.8;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 450px;
+            object-fit: contain;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .image-preview:hover {
+            transform: scale(1.05);
+        }
+        
+        .similar-questions-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .similar-item {
+            border: 2px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .similar-item:hover {
+            border-color: var(--primary);
+            background: #EEF2FF;
+        }
+        
+        .similar-item.selected {
+            border-color: var(--primary);
+            background: #E0E7FF;
+        }
+
+        .list-image-preview {
+            max-width: 600px;
+            max-height: 450px;
+            border-radius: 8px;
+            margin-top: 4px;
+            object-fit: contain;
+            border: 1px solid #E5E7EB;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen">
+        <div class="sidebar w-64 text-white p-6 flex flex-col">
+            <div>
+                <div class="mb-8">
+                    <h1 class="text-2xl font-bold tracking-tight">AI Agent Dashboard</h1>
+                    <p class="text-sm opacity-80 mt-1">Scientific Corrections</p>
+                </div>
+                
+                <nav class="space-y-1">
+                    <a href="/" class="nav-item flex items-center p-3">
+                        <i class="fas fa-tachometer-alt mr-3"></i>Dashboard
+                    </a>
+                    <a href="/conversations?chat_type=scientific" class="nav-item flex items-center p-3">
+                        <i class="fas fa-comments mr-3"></i>Conversations
+                    </a>
+                    <a href="/broadcast" class="nav-item flex items-center p-3">
+                        <i class="fas fa-bullhorn mr-3"></i>Broadcast
+                    </a>
+                    <a href="/content-management" class="nav-item flex items-center p-3">
+                        <i class="fas fa-folder mr-3"></i>Content Management
+                    </a>
+                    <a href="/feedback" class="nav-item flex items-center p-3">
+                        <i class="fas fa-thumbs-down mr-3"></i>Feedback Queue
+                    </a>
+                    <a href="/corrections-hub" class="nav-item active flex items-center p-3">
+                        <i class="fas fa-check-double mr-3"></i>Corrections Hub
+                    </a>
+                    <a href="/analytics" class="nav-item flex items-center p-3">
+                        <i class="fas fa-chart-bar mr-3"></i>Analytics
+                    </a>
+                    <a href="/site-issues" class="nav-item flex items-center p-3">
+                        <i class="fas fa-cogs mr-3"></i>Site Issues
+                    </a>
+                    <a href="/admin-management" class="nav-item flex items-center p-3">
+                        <i class="fas fa-user-shield mr-3"></i>Admin Management
+                    </a>
+                </nav>
+            </div>
+            <div class="mt-auto">
+                <a href="/logout" class="nav-item flex items-center p-3">
+                    <i class="fas fa-sign-out-alt mr-3"></i>Logout
+                </a>
+            </div>
+        </div>
+        
+        <div class="flex-1 overflow-hidden flex flex-col">
+            <div class="bg-white border-b p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-900">
+                            <i class="fas fa-check-double text-indigo-600 mr-2"></i> Scientific Corrections Hub
+                        </h2>
+                        <p class="text-gray-600 mt-1">Review, search, and manage all scientific answers</p>
+                    </div>
+                    <button id="refresh-stats" class="btn-primary">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto">
+            
+            <div class="p-6 bg-gray-50 border-b">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="stats-container">
+                </div>
+            </div>
+            
+            <div class="bg-white border-b px-6">
+                <div class="flex space-x-2">
+                    <button class="tab-button active" data-tab="corrected" onclick="switchTab('corrected')">
+                        <i class="fas fa-check-circle mr-2"></i>Corrected Questions
+                    </button>
+                    <button class="tab-button" data-tab="pending" onclick="switchTab('pending')">
+                        <i class="fas fa-exclamation-circle mr-2"></i>Pending Questions
+                        <span id="pending-badge" class="ml-2 px-2 py-1 bg-red-500 text-white rounded-full text-xs">0</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="corrected-tab" class="tab-content active">
+                <div class="p-6 bg-white border-b">
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <div class="flex-1 min-w-64">
+                            <div class="relative">
+                                <input 
+                                    type="text" 
+                                    id="search-input-corrected" 
+                                    placeholder="Search corrected questions..." 
+                                    class="search-box pl-10"
+                                >
+                            </div>
+                        </div>
+                        
+                        <button id="clear-filters-corrected" class="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold">
+                            <i class="fas fa-times mr-2"></i>Clear
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <div id="corrections-container" class="space-y-4"></div>
+                    <div id="pagination-corrected" class="flex justify-center items-center gap-2 mt-6"></div>
+                </div>
+            </div>
+            
+            <div id="pending-tab" class="tab-content">
+                <div class="p-6 bg-white border-b">
+                    <div class="flex flex-wrap gap-4 items-center">
+                        <div class="flex-1 min-w-64">
+                            <div class="relative">
+                                <input 
+                                    type="text" 
+                                    id="search-input-pending" 
+                                    placeholder="Search pending questions..." 
+                                    class="search-box pl-15"
+                                >
+                            </div>
+                        </div>
+                        
+                        <button id="clear-filters-pending" class="px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 font-semibold">
+                            <i class="fas fa-times mr-2"></i>Clear
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <div id="pending-container" class="space-y-4"></div>
+                    <div id="pagination-pending" class="flex justify-center items-center gap-2 mt-6"></div>
+                </div>
+            </div>
+
+            </div>
+
+        </div>
+    </div>
+    
+    <div id="correction-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl w-full max-w-4xl mx-4 shadow-2xl max-h-screen overflow-y-auto">
+            <div class="p-6 border-b bg-gradient-to-r from-indigo-50 to-violet-50">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-2xl font-bold text-gray-900">
+                        <i class="fas fa-edit text-indigo-600 mr-2"></i> Correction Details
+                    </h3>
+                    <button id="close-modal" class="text-gray-500 hover:text-gray-700 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <div class="mb-6">
+                    <div id="modal-image-container" class="mb-3"></div>
+                </div>
+                
+                <!-- MODIFICATION 1: Added id="modal-question-text-container" -->
+                <div id="modal-question-text-container" class="mb-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-2">
+                        <i class="fas fa-question-circle text-indigo-600 mr-2"></i>Original Question:
+                    </label>
+                    <p id="modal-question-text" class="w-full p-4 border-2 border-gray-200 rounded-lg bg-gray-50 question-text"></p>
+                </div>
+                
+                <div class="mb-6">
+                    <label for="modal-corrected-text" class="block text-sm font-bold text-gray-700 mb-2">
+                        <i class="fas fa-check-circle text-indigo-600 mr-2"></i>Corrected Answer:
+                    </label>
+                    <textarea 
+                        id="modal-corrected-text" 
+                        rows="8" 
+                        class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none question-text"
+                    ></textarea>
+                </div>
+                
+                <div class="mb-6">
+                    <button id="find-similar-btn" class="w-full btn-primary mb-3">
+                        <i class="fas fa-search mr-2"></i>Find Similar Uncorrected Questions
+                    </button>
+                    
+                    <div id="similar-questions-container" class="hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-sm font-semibold text-gray-700">
+                                <span id="similar-count">0</span> Similar Questions Found
+                            </p>
+                            <button id="select-all-similar" class="text-sm text-indigo-600 hover:text-indigo-700 font-semibold">
+                                Select All
+                            </button>
+                        </div>
+                        <div class="similar-questions-list" id="similar-questions-list"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 p-6 border-t bg-gray-50">
+                <button id="cancel-correction" class="px-6 py-3 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-100 font-semibold">
+                    Cancel
+                </button>
+                <button id="update-correction" class="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-semibold">
+                    <i class="fas fa-save mr-2"></i>Save Correction
+                </button>
+                <button id="bulk-apply" class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-semibold hidden">
+                    <i class="fas fa-layer-group mr-2"></i>Apply to Selected (<span id="selected-count">0</span>)
+                </button>
+                <button id="export-to-faq" class="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-semibold">
+                    <i class="fas fa-book mr-2"></i>Export to FAQ
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50">
+        <div class="relative max-w-4xl max-h-screen p-4">
+            <button onclick="closeImageModal()" class="absolute top-2 right-2 text-white text-3xl hover:text-gray-300">&times;</button>
+            <img id="modal-image" src="" alt="Full size image" class="max-w-full max-h-screen rounded-lg">
+        </div>
+    </div>
+    
+    <div id="toast-container" class="fixed top-4 right-4 z-50"></div>
+    
+    <script>
+        let currentPage = 1;
+        const itemsPerPage = 20;
+        let currentFilters = {};
+        let currentCorrectionData = null;
+        let selectedSimilarQuestions = [];
+        let currentTab = 'corrected';
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStatistics();
+            loadCorrections();
+            initializeEventListeners();
+        });
+        
+        function initializeEventListeners() {
+            // Corrected tab
+            document.getElementById('search-input-corrected').addEventListener('keyup', debounce(() => handleSearch('corrected'), 500));
+            document.getElementById('clear-filters-corrected').addEventListener('click', () => clearFilters('corrected'));
+            
+            // Pending tab
+            document.getElementById('search-input-pending').addEventListener('keyup', debounce(() => handleSearch('pending'), 500));
+            document.getElementById('clear-filters-pending').addEventListener('click', () => clearFilters('pending'));
+            
+            document.getElementById('refresh-stats').addEventListener('click', () => {
+                loadStatistics();
+                if (currentTab === 'corrected') {
+                    loadCorrections();
+                } else {
+                    loadPendingQuestions();
+                }
+            });
+            
+            // Modal
+            document.getElementById('close-modal').addEventListener('click', closeModal);
+            document.getElementById('cancel-correction').addEventListener('click', closeModal);
+            document.getElementById('update-correction').addEventListener('click', updateCorrection);
+            document.getElementById('bulk-apply').addEventListener('click', bulkApplyCorrection);
+            document.getElementById('export-to-faq').addEventListener('click', exportToFAQ);
+            document.getElementById('find-similar-btn').addEventListener('click', findSimilarQuestions);
+            document.getElementById('select-all-similar').addEventListener('click', selectAllSimilar);
+        }
+        
+        function switchTab(tab) {
+            currentTab = tab;
+            currentPage = 1;
+            currentFilters = {};
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                if (btn.dataset.tab === tab) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tab}-tab`).classList.add('active');
+            
+            // Load appropriate data
+            if (tab === 'corrected') {
+                loadCorrections();
+            } else {
+                loadPendingQuestions();
+            }
+        }
+        
+        async function loadStatistics() {
+            try {
+                // Load correction statistics
+                const correctionResponse = await fetch('/api/corrections/statistics');
+                const correctionResult = await correctionResponse.json();
+                
+                // Load pending statistics
+                const pendingResponse = await fetch('/api/corrections/pending-statistics');
+                const pendingResult = await pendingResponse.json();
+                
+                if (correctionResult.success && pendingResult.success) {
+                    displayStatistics(correctionResult.stats, pendingResult.pending_count);
+                }
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+        
+        function displayStatistics(stats, pendingCount) {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = `
+                <div class="card stat-card p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-600 mb-1">Total Scientific</p>
+                            <p class="text-3xl font-bold text-gray-900">${stats.total_scientific || 0}</p>
+                        </div>
+                        <i class="fas fa-flask text-4xl text-indigo-600 opacity-20"></i>
+                    </div>
+                </div>
+                
+                <div class="card stat-card p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-600 mb-1">Corrected</p>
+                            <p class="text-3xl font-bold text-indigo-600">${stats.corrected_count || 0}</p>
+                        </div>
+                        <i class="fas fa-check-double text-4xl text-indigo-600 opacity-20"></i>
+                    </div>
+                </div>
+                
+                <div class="card stat-card clickable pending-stat p-6" onclick="switchTab('pending')">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-600 mb-1">Pending Questions</p>
+                            <p class="text-3xl font-bold text-red-600">${pendingCount || 0}</p>
+                        </div>
+                        <i class="fas fa-exclamation-circle text-4xl text-red-600 opacity-20"></i>
+                    </div>
+                </div>
+                
+                <div class="card stat-card p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-semibold text-gray-600 mb-1">Correction Rate</p>
+                            <p class="text-3xl font-bold text-purple-600">${stats.correction_rate?.toFixed(1) || 0}%</p>
+                        </div>
+                        <i class="fas fa-chart-line text-4xl text-purple-600 opacity-20"></i>
+                    </div>
+                </div>
+            `;
+            
+            // Update pending badge
+            document.getElementById('pending-badge').textContent = pendingCount || 0;
+        }
+        
+        async function loadCorrections() {
+            try {
+                const queryParams = new URLSearchParams({
+                    page: currentPage,
+                    limit: itemsPerPage,
+                    ...currentFilters
+                });
+                
+                const response = await fetch(`/api/corrections/list?${queryParams}`);
+                const result = await response.json();
+                if (result.success) {
+                    displayCorrections(result.corrections);
+                    displayPagination(result.total, result.page, result.pages, 'corrected');
+                }
+            } catch (error) {
+                console.error('Error loading corrections:', error);
+                showToast('Error loading corrections', 'error');
+            }
+        }
+        
+        async function loadPendingQuestions() {
+            try {
+                const queryParams = new URLSearchParams({
+                    page: currentPage,
+                    limit: itemsPerPage,
+                    ...currentFilters
+                });
+                
+                const response = await fetch(`/api/corrections/pending-list?${queryParams}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayPendingQuestions(result.pending_questions);
+                    displayPagination(result.total, result.page, result.pages, 'pending');
+                }
+            } catch (error) {
+                console.error('Error loading pending questions:', error);
+                showToast('Error loading pending questions', 'error');
+            }
+        }
+        
+        function displayCorrections(corrections) {
+            const container = document.getElementById('corrections-container');
+            
+            if (corrections.length === 0) {
+                container.innerHTML = `
+                    <div class="card p-12 text-center">
+                        <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+                        <p class="text-xl text-gray-500">No corrections found</p>
+                        <p class="text-sm text-gray-400 mt-2">Try adjusting your filters</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = corrections.map(correction => `
+                <div class="card correction-item p-6 cursor-pointer" onclick="viewCorrection(${correction.id})">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check mr-1"></i>Corrected
+                                </span>
+                                <span class="text-sm text-gray-500">
+                                    Student ${correction.user_id}
+                                </span>
+                                <span class="text-sm text-gray-400">
+                                    ${formatTimestamp(correction.timestamp)}
+                                </span>
+                            </div>
+                            
+                            ${correction.image_path && !correction.user_input ? `
+                                <div class="mb-3">
+                                    <span class="badge badge-info">
+                                        <i class="fas fa-image mr-1"></i>Image Question
+                                    </span>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="mb-3">
+                                <p class="text-sm font-semibold text-gray-700 mb-1">Question:</p>
+                                <!-- MODIFICATION 2: Removed text output if image exists -->
+                                ${correction.image_path ? `
+                                    <img src="/assets/${correction.image_path.replace(/\\/g, '/')}" class="list-image-preview" alt="Question Image" />
+                                ` : `
+                                    <p class="text-gray-800 question-text line-clamp-2">${escapeHtml(correction.user_input || '[No Question Text]')}</p>
+                                `}
+                            </div>
+                            
+                            <div>
+                                <p class="text-sm font-semibold text-gray-700 mb-1">Corrected Answer:</p>
+                                <p class="text-gray-600 question-text line-clamp-3">${escapeHtml(correction.corrected_text).substring(0, 200)}...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="ml-4 flex flex-col space-y-2" style="min-width: 130px;">
+                            <button class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 font-semibold">
+                                <i class="fas fa-eye mr-2"></i>View
+                            </button>
+                            ${correction.cached_question_id ? `
+                                <button onclick="event.stopPropagation(); deleteCachedAnswer(${correction.cached_question_id});" 
+                                        class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-semibold">
+                                    <i class="fas fa-trash-alt mr-2"></i>Delete Cache
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function displayPendingQuestions(questions) {
+            const container = document.getElementById('pending-container');
+            
+            if (questions.length === 0) {
+                container.innerHTML = `
+                    <div class="card p-12 text-center">
+                        <i class="fas fa-check-circle text-6xl text-green-500 mb-4"></i>
+                        <p class="text-xl text-gray-900 font-bold">All caught up!</p>
+                        <p class="text-sm text-gray-500 mt-2">No pending questions to review</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = questions.map(question => `
+                <div class="card pending-item p-6 cursor-pointer" onclick="viewPendingQuestion(${question.id})">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="badge badge-danger">
+                                    <i class="fas fa-thumbs-down mr-1"></i>Disliked
+                                </span>
+                                <span class="text-sm text-gray-500">
+                                    Student ${question.user_id}
+                                </span>
+                                <span class="text-sm text-gray-400">
+                                    ${formatTimestamp(question.timestamp)}
+                                </span>
+                            </div>
+                            
+                            ${question.image_path ? `
+                                <div class="mb-3">
+                                    <span class="badge badge-info">
+                                        <i class="fas fa-image mr-1"></i>Image Question
+                                    </span>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="mb-3">
+                                <p class="text-sm font-semibold text-gray-700 mb-1">Question:</p>
+                                <!-- MODIFICATION 3: Removed text output if image exists -->
+                                ${question.image_path ? `
+                                    <img src="/assets/${question.image_path.replace(/\\/g, '/')}" class="list-image-preview" alt="Question Image" />
+                                ` : `
+                                    <p class="text-gray-800 question-text line-clamp-2">${escapeHtml(question.user_input || '[No Question Text]')}</p>
+                                `}
+                            </div>
+                            
+                            <div>
+                                <p class="text-sm font-semibold text-gray-700 mb-1">Original Answer:</p>
+                                <p class="text-gray-600 question-text line-clamp-3">${escapeHtml(question.bot_response).substring(0, 200)}...</p>
+                            </div>
+                        </div>
+                        
+                        <div class="ml-4">
+                            <button class="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-semibold">
+                                <i class="fas fa-edit mr-2"></i>Correct Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function displayPagination(total, currentPage, totalPages, tab) {
+            const container = document.getElementById(`pagination-${tab}`);
+            
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = `
+                <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} 
+                    class="px-4 py-2 border rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            `;
+            
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `
+                        <button onclick="changePage(${i})" 
+                            class="px-4 py-2 border rounded-lg ${i === currentPage ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100'}">
+                            ${i}
+                        </button>
+                    `;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += '<span class="px-2">...</span>';
+                }
+            }
+            
+            html += `
+                <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} 
+                    class="px-4 py-2 border rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
+            
+            container.innerHTML = html;
+        }
+        
+        function changePage(page) {
+            currentPage = page;
+            if (currentTab === 'corrected') {
+                loadCorrections();
+            } else {
+                loadPendingQuestions();
+            }
+            window.scrollTo(0, 0);
+        }
+        
+        async function viewCorrection(correctionId) {
+            try {
+                const response = await fetch(`/api/corrections/detail/${correctionId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentCorrectionData = result.correction;
+                    displayCorrectionModal(result.correction);
+                }
+            } catch (error) {
+                console.error('Error loading correction details:', error);
+                showToast('Error loading correction details', 'error');
+            }
+        }
+        
+        async function viewPendingQuestion(questionId) {
+            try {
+                const response = await fetch(`/api/corrections/pending-detail/${questionId}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentCorrectionData = result.pending_question;
+                    displayCorrectionModal(result.pending_question, true);
+                }
+            } catch (error) {
+                console.error('Error loading pending question:', error);
+                showToast('Error loading pending question', 'error');
+            }
+        }
+        
+        function displayCorrectionModal(data, isPending = false) {
+            // Display corrected or original answer
+            const answerText = isPending ? data.bot_response : data.corrected_text;
+            document.getElementById('modal-corrected-text').value = answerText;
+            
+            // Handle image and question text
+            const imageContainer = document.getElementById('modal-image-container');
+            const questionTextContainer = document.getElementById('modal-question-text-container');
+            
+            if (data.image_path) {
+                const imageUrl = `/assets/${data.image_path.replace(/\\/g, '/')}`;
+                imageContainer.innerHTML = `
+                    <label class="block text-sm font-bold text-gray-700 mb-2">
+                        <i class="fas fa-image text-indigo-600 mr-2"></i>Question Image:
+                    </label>
+                    <img src="${imageUrl}" class="image-preview" onclick="openImageModal('${imageUrl}')" />
+                `;
+                questionTextContainer.style.display = 'none'; // Hide text div
+            } else {
+                imageContainer.innerHTML = ''; // Clear image
+                questionTextContainer.style.display = 'block'; // Show text div
+                const questionText = (data.user_input && data.user_input !== '[Image Question]') 
+                    ? data.user_input 
+                    : '[No Question Text]';
+                document.getElementById('modal-question-text').textContent = questionText;
+            }
+            
+            // Reset similar questions
+            document.getElementById('similar-questions-container').classList.add('hidden');
+            selectedSimilarQuestions = [];
+            
+            document.getElementById('correction-modal').classList.remove('hidden');
+            document.getElementById('correction-modal').classList.add('flex');
+        }
+        
+        function closeModal() {
+            document.getElementById('correction-modal').classList.add('hidden');
+            document.getElementById('correction-modal').classList.remove('flex');
+            currentCorrectionData = null;
+        }
+        
+        async function updateCorrection() {
+            if (!currentCorrectionData) return;
+            
+            const correctedText = document.getElementById('modal-corrected-text').value.trim();
+            if (!correctedText) {
+                showToast('Corrected answer cannot be empty', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/conversation/correct', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        interaction_id: currentCorrectionData.id,
+                        corrected_text: correctedText
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Correction saved successfully', 'success');
+                    closeModal();
+                    loadStatistics();
+                    if (currentTab === 'corrected') {
+                        loadCorrections();
+                    } else {
+                        loadPendingQuestions();
+                    }
+                } else {
+                    showToast('Error saving correction: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error saving correction: ' + error.message, 'error');
+            }
+        }
+        
+        async function findSimilarQuestions() {
+            if (!currentCorrectionData) return;
+            
+            const questionText = currentCorrectionData.user_input;
+            
+            try {
+                const response = await fetch('/api/corrections/find-similar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question_text: questionText })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.similar.length > 0) {
+                    displaySimilarQuestions(result.similar);
+                    document.getElementById('similar-questions-container').classList.remove('hidden');
+                } else {
+                    showToast('No similar uncorrected questions found', 'info');
+                }
+            } catch (error) {
+                console.error('Error finding similar questions:', error);
+                showToast('Error finding similar questions', 'error');
+            }
+        }
+        
+        function displaySimilarQuestions(questions) {
+            const container = document.getElementById('similar-questions-list');
+            document.getElementById('similar-count').textContent = questions.length;
+            
+            container.innerHTML = questions.map(q => `
+                <div class="similar-item" data-id="${q.id}" onclick="toggleSimilarQuestion(${q.id})">
+                    <div class="flex items-start">
+                        <input type="checkbox" class="mt-1 mr-3" onclick="event.stopPropagation(); toggleSimilarQuestion(${q.id})">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="text-sm font-semibold text-gray-700">Student ${q.user_id}</span>
+                                <span class="text-xs text-gray-500">${formatTimestamp(q.timestamp)}</span>
+                            </div>
+                            <p class="text-sm text-gray-600 question-text">${escapeHtml(q.user_input).substring(0, 150)}...</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function toggleSimilarQuestion(questionId) {
+            const item = document.querySelector(`.similar-item[data-id="${questionId}"]`);
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            
+            if (selectedSimilarQuestions.includes(questionId)) {
+                selectedSimilarQuestions = selectedSimilarQuestions.filter(id => id !== questionId);
+                item.classList.remove('selected');
+                checkbox.checked = false;
+            } else {
+                selectedSimilarQuestions.push(questionId);
+                item.classList.add('selected');
+                checkbox.checked = true;
+            }
+            
+            updateBulkApplyButton();
+        }
+        
+        function selectAllSimilar() {
+            const items = document.querySelectorAll('.similar-item');
+            const allSelected = selectedSimilarQuestions.length === items.length;
+            
+            if (allSelected) {
+                selectedSimilarQuestions = [];
+                items.forEach(item => {
+                    item.classList.remove('selected');
+                    item.querySelector('input[type="checkbox"]').checked = false;
+                });
+            } else {
+                selectedSimilarQuestions = [];
+                items.forEach(item => {
+                    const id = parseInt(item.dataset.id);
+                    selectedSimilarQuestions.push(id);
+                    item.classList.add('selected');
+                    item.querySelector('input[type="checkbox"]').checked = true;
+                });
+            }
+            
+            updateBulkApplyButton();
+        }
+        
+        function updateBulkApplyButton() {
+            const btn = document.getElementById('bulk-apply');
+            document.getElementById('selected-count').textContent = selectedSimilarQuestions.length;
+            
+            if (selectedSimilarQuestions.length > 0) {
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+        
+        async function bulkApplyCorrection() {
+            if (selectedSimilarQuestions.length === 0) return;
+            
+            const correctedText = document.getElementById('modal-corrected-text').value.trim();
+            if (!correctedText) {
+                showToast('Corrected answer cannot be empty', 'error');
+                return;
+            }
+            
+            if (!confirm(`Apply this correction to ${selectedSimilarQuestions.length} questions?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/corrections/bulk-apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        interaction_ids: selectedSimilarQuestions,
+                        corrected_text: correctedText
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast(`Successfully applied correction to ${result.count} questions`, 'success');
+                    closeModal();
+                    loadStatistics();
+                    if (currentTab === 'corrected') {
+                        loadCorrections();
+                    } else {
+                        loadPendingQuestions();
+                    }
+                } else {
+                    showToast('Error applying bulk correction: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error applying bulk correction: ' + error.message, 'error');
+            }
+        }
+        
+        async function exportToFAQ() {
+            if (!currentCorrectionData) return;
+            
+            const question = currentCorrectionData.user_input;
+            const answer = document.getElementById('modal-corrected-text').value.trim();
+            
+            if (!answer) {
+                showToast('Corrected answer cannot be empty', 'error');
+                return;
+            }
+            
+            // Get FAQ files
+            const faqResponse = await fetch('/api/faqs/list?chat_type=scientific');
+            const faqResult = await faqResponse.json();
+            
+            let faqFile = 'chapter_1/lesson_1.json';
+            if (faqResult.success && faqResult.files.length > 0) {
+                faqFile = prompt('Enter FAQ file name:', faqResult.files[0]) || faqFile;
+            } else {
+                faqFile = prompt('Enter FAQ file name (e.g., chapter_1/lesson_1.json):', faqFile) || faqFile;
+            }
+            
+            try {
+                const response = await fetch('/api/faq/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: faqFile,
+                        question: question,
+                        answer: answer,
+                        chat_type: 'scientific'
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast('Successfully exported to FAQ', 'success');
+                } else {
+                    showToast('Error exporting to FAQ: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('Error exporting to FAQ: ' + error.message, 'error');
+            }
+        }
+        
+        function handleSearch(tab) {
+            const searchInput = document.getElementById(`search-input-${tab}`).value;
+            currentFilters.search = searchInput;
+            currentPage = 1;
+            
+            if (tab === 'corrected') {
+                loadCorrections();
+            } else {
+                loadPendingQuestions();
+            }
+        }
+        
+        function clearFilters(tab) {
+            currentFilters = {};
+            document.getElementById(`search-input-${tab}`).value = '';
+            currentPage = 1;
+            
+            if (tab === 'corrected') {
+                loadCorrections();
+            } else {
+                loadPendingQuestions();
+            }
+        }
+        
+        function openImageModal(imagePath) {
+            document.getElementById('modal-image').src = imagePath;
+            document.getElementById('image-modal').classList.remove('hidden');
+            document.getElementById('image-modal').classList.add('flex');
+        }
+        
+        function closeImageModal() {
+            document.getElementById('image-modal').classList.add('hidden');
+            document.getElementById('image-modal').classList.remove('flex');
+        }
+        
+        async function deleteCachedAnswer(cachedId) {
+            if (!cachedId) {
+                showToast('This correction is not linked to a cached answer.', 'info');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to delete this cached answer?\n\nThis will unlink all similar questions and they will need new corrections.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/cache/delete/${cachedId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Server returned HTML instead of JSON');
+                    showToast('Server error: Please check if you are logged in', 'error');
+                    if (response.status === 401 || response.url.includes('/login')) {
+                        window.location.href = '/login';
+                    }
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Cached answer deleted successfully. Refreshing list...', 'success');
+                    setTimeout(() => {
+                        loadCorrections();
+                        loadStatistics();
+                    }, 500);
+                } else {
+                    showToast('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error in deleteCachedAnswer:', error);
+                showToast('An error occurred: ' + error.message, 'error');
+            }
+        }
+        
+        function formatTimestamp(timestamp) {
+            return new Date(timestamp).toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-xl shadow-lg text-white transform translate-x-full transition-transform duration-300 mb-2 ${
+                type === 'success' ? 'bg-gradient-to-r from-green-500 to-green-800' : 
+                type === 'error' ? 'bg-gradient-to-r from-red-500 to-pink-600' : 
+                'bg-gradient-to-r from-indigo-500 to-violet-600'
+            }`;
+            toast.textContent = message;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+    </script>
+</body>
+</html>

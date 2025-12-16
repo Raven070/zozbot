@@ -111,11 +111,11 @@ class ScientificCore:
             logger.info("Scientific core initialized - Cache-on-approval mode enabled")
 
     def _initialize_model(self):
-        """Initialize the Gemini 2.0 Flash model."""
+        """Initialize the gemini-2.5-flash model."""
         try:
             genai.configure(api_key=SCIENTIFIC_GENAI_API_KEY)
-            model = genai.GenerativeModel('gemini-2.0-flash-exp')
-            logger.info("Gemini 2.0 Flash model initialized successfully")
+            model = genai.GenerativeModel('gemini-2.5-flash')
+            logger.info("gemini-2.5-flash model initialized successfully")
             return model
         except Exception as e:
             logger.error(f"Error initializing scientific Gemini model: {e}", exc_info=True)
